@@ -128,6 +128,24 @@ docs(api): completa swagger de loan-requests
 
 ---
 
+## 📦 Skills de IA (.agents/skills/)
+
+El directorio `.agents/skills/` contiene skills de IA que mejoran la asistencia durante el desarrollo.
+
+### Reglas
+
+- **Skills oficiales y verificadas:** Solo se commitean skills de fuentes oficiales con licencia clara (MIT, Apache-2.0). Ej: `solana-dev` de Solana Foundation.
+- **skills-lock.json:** Se versiona junto con los skills. Mantiene el hash SHA256 de cada skill para verificar integridad.
+- **Actualización:** Cada skill se actualiza vía `npx skills add <source>` en su propia rama siguiendo el flujo de PR estándar.
+- **Propietario:** El mantenedor del área correspondiente revisa los cambios (ej: blockchain → Daniel Gualán).
+- **No mezclar:** Un PR de skill no debe tocar código fuente. Solo archivos bajo `.agents/skills/` y `skills-lock.json`.
+
+### Qué skills entran
+
+Skills críticas para el stack del proyecto (Solana, Anchor, blockchain). Skills de propósito general o experimentales se instalan localmente por cada dev.
+
+---
+
 ## 🤖 Reglas para asistentes de IA (Claude, Cursor, Copilot)
 
 Cuando uses vibe coding, el asistente debe respetar lo siguiente. Si genera algo que rompa estas reglas, **rechazar y regenerar** corrigiendo.
