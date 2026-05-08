@@ -2,6 +2,10 @@ use anchor_lang::prelude::*;
 
 declare_id!("DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o");
 
+// Hackathon scope: admin único alineado con la wallet local del provider de Anchor.
+// Reemplazar por multisig o governance antes de producción.
+pub const ADMIN_PUBKEY: Pubkey = pubkey!("HwCUQk4QKvDweRpmDZdEc4tLVDnUm6ZkBHQ2ZXxWmN7C");
+
 #[program]
 pub mod credia_reputation {
     use super::*;
@@ -33,7 +37,7 @@ pub mod credia_reputation {
         amount_hash: [u8; 32],
     ) -> Result<()> {
         let loan_record = &mut ctx.accounts.loan_record;
-        loan_record.user_wallet = *ctx.accounts.authority.key;
+        loan_record.user_wallet = ctx.accounts.target_wallet.key();
         loan_record.loan_id_hash = loan_id_hash;
         loan_record.amount_hash = amount_hash;
         loan_record.status = LoanStatus::Active;
@@ -88,28 +92,34 @@ pub struct InitReputation<'info> {
 
 #[derive(Accounts)]
 pub struct UpdateScoreHash<'info> {
+    /// CHECK: wallet del usuario cuyo score se actualiza; solo se usa como semilla del PDA.
+    pub target_wallet: UncheckedAccount<'info>,
     #[account(
         mut,
-        seeds = [b"reputation", authority.key().as_ref()],
+        seeds = [b"reputation", target_wallet.key().as_ref()],
         bump = user_reputation.bump,
     )]
     pub user_reputation: Account<'info, UserReputation>,
-    pub authority: Signer<'info>,
+    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    pub admin: Signer<'info>,
 }
 
 #[derive(Accounts)]
 #[instruction(loan_id_hash: [u8; 32], amount_hash: [u8; 32])]
 pub struct CreateLoanRecord<'info> {
+    /// CHECK: wallet del usuario dueño del préstamo; solo se usa como semilla y referencia.
+    pub target_wallet: UncheckedAccount<'info>,
     #[account(
         init,
-        payer = authority,
+        payer = admin,
         space = 8 + 32 + 32 + 32 + 1 + 8 + 1,
-        seeds = [b"loan", authority.key().as_ref(), loan_id_hash.as_ref()],
+        seeds = [b"loan", target_wallet.key().as_ref(), loan_id_hash.as_ref()],
         bump
     )]
     pub loan_record: Account<'info, LoanRecord>,
     #[account(mut)]
-    pub authority: Signer<'info>,
+    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -118,7 +128,7 @@ pub struct RegisterPayment<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + 32 + 32 + 32 + 1 + 8 + 1,
+        space = 8 + 32 + 32 + 32 + 32 + 1 + 8 + 1,
         seeds = [b"payment", loan_record.key().as_ref(), authority.key().as_ref()],
         bump
     )]
@@ -136,24 +146,30 @@ pub struct RegisterPayment<'info> {
 
 #[derive(Accounts)]
 pub struct CloseLoan<'info> {
+    /// CHECK: wallet del usuario dueño del préstamo; solo se usa como semilla del PDA.
+    pub target_wallet: UncheckedAccount<'info>,
     #[account(
         mut,
-        seeds = [b"loan", authority.key().as_ref(), loan_record.loan_id_hash.as_ref()],
+        seeds = [b"loan", target_wallet.key().as_ref(), loan_record.loan_id_hash.as_ref()],
         bump = loan_record.bump,
     )]
     pub loan_record: Account<'info, LoanRecord>,
-    pub authority: Signer<'info>,
+    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    pub admin: Signer<'info>,
 }
 
 #[derive(Accounts)]
 pub struct MarkDefault<'info> {
+    /// CHECK: wallet del usuario dueño del préstamo; solo se usa como semilla del PDA.
+    pub target_wallet: UncheckedAccount<'info>,
     #[account(
         mut,
-        seeds = [b"loan", authority.key().as_ref(), loan_record.loan_id_hash.as_ref()],
+        seeds = [b"loan", target_wallet.key().as_ref(), loan_record.loan_id_hash.as_ref()],
         bump = loan_record.bump,
     )]
     pub loan_record: Account<'info, LoanRecord>,
-    pub authority: Signer<'info>,
+    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    pub admin: Signer<'info>,
 }
 
 #[account]
