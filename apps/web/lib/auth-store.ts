@@ -54,6 +54,13 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'credia-auth',
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state?.accessToken) {
+          setCookie(state.accessToken);
+        } else {
+          clearCookie();
+        }
+      },
     },
   ),
 );
