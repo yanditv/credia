@@ -79,6 +79,7 @@ model User {
   documentNumber String    @unique
   phone          String
   email          String    @unique
+  passwordHash   String
   walletAddress  String?
   role           Role      @default(USER)
   status         UserStatus @default(PENDING)

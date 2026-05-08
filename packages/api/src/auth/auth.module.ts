@@ -1,11 +1,34 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
-
-// STUB MODULE — reemplazar por feat/api/auth-module (Cesar) cuando mergee a develop.
-// Solo expone el guard mock para que los demás módulos puedan usar @UseGuards(JwtAuthGuard).
+import { RefreshTokenGuard } from './guards/refresh-token.guard';
 
 @Module({
-  providers: [JwtAuthGuard],
-  exports: [JwtAuthGuard],
+  imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+          secret: config.getOrThrow<string>('JWT_SECRET'),
+          signOptions: { expiresIn: '1h' },
+        }),
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RefreshTokenStrategy,
+    JwtAuthGuard,
+    RefreshTokenGuard,
+  ],
+  exports: [AuthService, JwtAuthGuard, RefreshTokenGuard],
 })
 export class AuthModule {}

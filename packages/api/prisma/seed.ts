@@ -1,9 +1,12 @@
 import { PrismaClient, Role, UserStatus, BusinessType, SourceType, RiskLevel } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
+
+  const passwordHash = await bcrypt.hash('demo1234', 10);
 
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@credia.io' },
@@ -13,6 +16,7 @@ async function main() {
       documentNumber: '9999999999',
       phone: '+593999999999',
       email: 'admin@credia.io',
+      passwordHash,
       role: Role.ADMIN,
       status: UserStatus.ACTIVE,
     },
@@ -26,6 +30,7 @@ async function main() {
       documentNumber: '0123456789',
       phone: '+593990000000',
       email: 'demo@credia.io',
+      passwordHash,
       role: Role.USER,
       status: UserStatus.ACTIVE,
     },
@@ -104,8 +109,8 @@ async function main() {
   });
 
   console.log('✅ Seed completed');
-  console.log(`   Admin user: admin@credia.io`);
-  console.log(`   Demo user: demo@credia.io (María García, score: 642)`);
+  console.log('   Admin user: admin@credia.io (password: demo1234)');
+  console.log('   Demo user: demo@credia.io (María García, password: demo1234)');
 }
 
 main()
