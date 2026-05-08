@@ -1,0 +1,11 @@
+[package]
+name = "credia_reputation"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "credia_reputation"
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+anchor-lang = "0.31.0"

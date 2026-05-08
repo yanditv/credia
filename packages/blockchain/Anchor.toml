@@ -1,0 +1,15 @@
+[programs.devnet]
+credia_reputation = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkgC7GqoV6cw3"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[workspace]
+members = ["programs/credia_reputation"]
+
+[scripts]
+test = "anchor test"
