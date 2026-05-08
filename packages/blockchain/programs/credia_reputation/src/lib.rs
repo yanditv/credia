@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkgC7GqoV6cw3");
+declare_id!("DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o");
 
 #[program]
 pub mod credia_reputation {
