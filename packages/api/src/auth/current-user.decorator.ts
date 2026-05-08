@@ -10,6 +10,8 @@ export interface CurrentUserPayload {
 
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): CurrentUserPayload => {
-    return ctx.switchToHttp().getRequest().user as CurrentUserPayload;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const request = ctx.switchToHttp().getRequest() as { user: CurrentUserPayload };
+    return request.user;
   },
 );

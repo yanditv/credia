@@ -7,7 +7,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:api": "npm run start:dev -w @credia/api"
+    "dev:api": "npm run start:dev -w @credia/api",
+    "dev:web": "npm run dev -w apps/web",
+    "build:api": "npm run build -w @credia/api",
+    "build:web": "npm run build -w apps/web",
+    "lint": "npm run lint -w apps/web"
   },
   "engines": {
     "node": ">=20"

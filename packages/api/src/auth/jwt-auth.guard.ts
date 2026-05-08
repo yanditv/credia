@@ -7,7 +7,9 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
-    const req = context.switchToHttp().getRequest();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const req = context.switchToHttp().getRequest() as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     req.user = {
       id: 'demo-user-1',
       email: 'demo@credia.io',
