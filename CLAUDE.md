@@ -1,7 +1,9 @@
-# CLAUDE.md — Credia Hackathon Guide
+# CLAUDE.md — Credia Project Guide
 
-> Guía maestra para desarrollo asistido por IA (vibe coding) en hackathon de 3 días.
+> Guía maestra para desarrollo asistido por IA (vibe coding).
 > Este archivo le dice a Claude exactamente qué es el proyecto, cómo está estructurado y cómo debe ayudarte.
+>
+> **Antes de generar código, leer también [CONTRIBUTING.md](CONTRIBUTING.md)** — contiene el modelo de ramas, convenciones de commits/PR, y reglas obligatorias para asistentes de IA.
 
 ---
 
