@@ -3,6 +3,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ConnectWalletDto } from './dto/connect-wallet.dto';
 
+// Errores de Prisma (P2002 conflict, P2025 not found, etc.) se mapean centralmente
+// vía PrismaClientExceptionFilter — no hace falta try/catch en cada método.
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}

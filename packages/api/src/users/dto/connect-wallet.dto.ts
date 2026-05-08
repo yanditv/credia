@@ -1,15 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Length, Matches } from 'class-validator';
+import { IsString } from 'class-validator';
+import { IsSolanaAddress } from '../../common/validators/is-solana-address.validator';
 
 export class ConnectWalletDto {
   @ApiProperty({
     example: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
-    description: 'Dirección de wallet Solana en base58 (32-44 caracteres)',
+    description: 'Dirección de wallet Solana (base58 que decodifica a 32 bytes)',
   })
   @IsString()
-  @Length(32, 44)
-  @Matches(/^[1-9A-HJ-NP-Za-km-z]+$/, {
-    message: 'walletAddress debe ser un string base58 válido',
-  })
+  @IsSolanaAddress()
   walletAddress!: string;
 }

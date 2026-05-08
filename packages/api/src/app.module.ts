@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER } from '@nestjs/core';
+import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exception.filter';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -12,6 +14,12 @@ import { BusinessProfilesModule } from './business-profiles/business-profiles.mo
     AuthModule,
     UsersModule,
     BusinessProfilesModule,
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: PrismaClientExceptionFilter,
+    },
   ],
 })
 export class AppModule {}
