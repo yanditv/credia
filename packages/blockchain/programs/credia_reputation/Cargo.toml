@@ -9,3 +9,6 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 anchor-lang = "0.31.0"
+
+[features]
+idl-build = ["anchor-lang/idl-build"]
