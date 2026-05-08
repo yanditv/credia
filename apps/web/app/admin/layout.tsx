@@ -6,21 +6,26 @@ import { useAuthStore } from '@/lib/auth-store';
 import { Sidebar } from '@/components/admin/sidebar';
 import { Topbar } from '@/components/admin/topbar';
 
-// Layout protegido para /admin/*. El middleware de Next.js ya rechaza requests
-// sin cookie en server-side; este efecto es la red de seguridad client-side
-// (por ejemplo cuando expira el token mientras el usuario está navegando).
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (_hasHydrated && !accessToken) {
       router.replace('/login');
     }
-  }, [accessToken, router]);
+  }, [_hasHydrated, accessToken, router]);
 
-  if (!accessToken) {
-    return null;
+  if (!_hasHydrated || !accessToken) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950">
+        <div className="flex items-center gap-2 text-sm text-slate-400">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          Cargando…
+        </div>
+      </div>
+    );
   }
 
   return (

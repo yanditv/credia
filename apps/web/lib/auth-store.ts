@@ -18,8 +18,10 @@ interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
   refreshToken: string | null;
+  _hasHydrated: boolean;
   setSession: (session: { user: AuthUser; accessToken: string; refreshToken: string }) => void;
   logout: () => void;
+  _setHasHydrated: (state: boolean) => void;
 }
 
 const COOKIE_NAME = 'credia_auth_token';
@@ -42,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
+      _hasHydrated: false,
       setSession: ({ user, accessToken, refreshToken }) => {
         setCookie(accessToken);
         set({ user, accessToken, refreshToken });
@@ -50,6 +53,7 @@ export const useAuthStore = create<AuthState>()(
         clearCookie();
         set({ user: null, accessToken: null, refreshToken: null });
       },
+      _setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
       name: 'credia-auth',
@@ -60,6 +64,7 @@ export const useAuthStore = create<AuthState>()(
         } else {
           clearCookie();
         }
+        state?._setHasHydrated(true);
       },
     },
   ),
