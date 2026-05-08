@@ -11,14 +11,10 @@ interface RefreshPayload {
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'refresh') {
   constructor(config: ConfigService) {
-    const secret = config.get<string>('JWT_REFRESH_SECRET');
-    if (!secret) {
-      throw new Error('JWT_REFRESH_SECRET environment variable is required');
-    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: secret,
+      secretOrKey: config.getOrThrow<string>('JWT_REFRESH_SECRET'),
     });
   }
 

@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { AuthResponseDto, UserResponseDto } from './dto/auth-response.dto';
+import { AuthResponseDto } from './dto/auth-response.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -65,32 +65,18 @@ export class AuthService {
     return this.generateTokens(user.id, user.email, user.role);
   }
 
-  async getProfile(userId: string): Promise<UserResponseDto> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
-    }
-    return {
-      id: user.id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-    };
-  }
-
   private generateTokens(userId: string, email: string, role: string): AuthResponseDto {
     const payload = { sub: userId, email, role };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.config.get<string>('JWT_SECRET'),
+      secret: this.config.getOrThrow<string>('JWT_SECRET'),
       expiresIn: '1h',
     });
 
     const refreshToken = this.jwtService.sign(
       { sub: userId, type: 'refresh' },
       {
-        secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
         expiresIn: '7d',
       },
     );

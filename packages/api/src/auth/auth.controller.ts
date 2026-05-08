@@ -5,7 +5,6 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-  Get,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,7 +16,6 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { CurrentUser, CurrentUserPayload } from './current-user.decorator';
 
@@ -64,15 +62,5 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Refresh token inválido o expirado' })
   async refresh(@CurrentUser() user: CurrentUserPayload): Promise<AuthResponseDto> {
     return this.authService.refreshTokens(user.id);
-  }
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
-  @ApiResponse({ status: 200, description: 'Perfil del usuario' })
-  @ApiResponse({ status: 401, description: 'Token inválido o expirado' })
-  async getProfile(@CurrentUser() user: CurrentUserPayload) {
-    return this.authService.getProfile(user.id);
   }
 }

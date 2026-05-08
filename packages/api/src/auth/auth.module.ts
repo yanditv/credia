@@ -15,16 +15,10 @@ import { RefreshTokenGuard } from './guards/refresh-token.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const secret = config.get<string>('JWT_SECRET');
-        if (!secret) {
-          throw new Error('JWT_SECRET environment variable is required');
-        }
-        return {
-          secret,
+      useFactory: (config: ConfigService) => ({
+          secret: config.getOrThrow<string>('JWT_SECRET'),
           signOptions: { expiresIn: '1h' },
-        };
-      },
+        }),
     }),
   ],
   controllers: [AuthController],
