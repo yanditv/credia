@@ -58,38 +58,36 @@ export class PrismaService {
   private businessProfilesStore: BusinessProfileRecord[] = [];
 
   user = {
-    findUnique: (args: {
+    findUnique: async (args: {
       where: { id?: string; email?: string };
     }): Promise<UserRecord | null> => {
       const { id, email } = args.where;
-      return Promise.resolve(
+      return (
         this.usersStore.find(
           (u) => (id !== undefined && u.id === id) || (email !== undefined && u.email === email),
-        ) ?? null,
+        ) ?? null
       );
     },
 
-    update: (args: {
+    update: async (args: {
       where: { id: string };
       data: Partial<UserRecord>;
     }): Promise<UserRecord | null> => {
       const idx = this.usersStore.findIndex((u) => u.id === args.where.id);
-      if (idx === -1) return Promise.resolve(null);
+      if (idx === -1) return null;
       this.usersStore[idx] = { ...this.usersStore[idx], ...args.data };
-      return Promise.resolve(this.usersStore[idx]);
+      return this.usersStore[idx];
     },
   };
 
   businessProfile = {
-    findUnique: (args: {
+    findUnique: async (args: {
       where: { userId: string };
     }): Promise<BusinessProfileRecord | null> => {
-      return Promise.resolve(
-        this.businessProfilesStore.find((b) => b.userId === args.where.userId) ?? null,
-      );
+      return this.businessProfilesStore.find((b) => b.userId === args.where.userId) ?? null;
     },
 
-    create: (args: {
+    create: async (args: {
       data: Omit<BusinessProfileRecord, 'id' | 'createdAt'>;
     }): Promise<BusinessProfileRecord> => {
       const record: BusinessProfileRecord = {
@@ -98,17 +96,17 @@ export class PrismaService {
         createdAt: new Date(),
       };
       this.businessProfilesStore.push(record);
-      return Promise.resolve(record);
+      return record;
     },
 
-    update: (args: {
+    update: async (args: {
       where: { userId: string };
       data: Partial<BusinessProfileRecord>;
     }): Promise<BusinessProfileRecord | null> => {
       const idx = this.businessProfilesStore.findIndex((b) => b.userId === args.where.userId);
-      if (idx === -1) return Promise.resolve(null);
+      if (idx === -1) return null;
       this.businessProfilesStore[idx] = { ...this.businessProfilesStore[idx], ...args.data };
-      return Promise.resolve(this.businessProfilesStore[idx]);
+      return this.businessProfilesStore[idx];
     },
   };
 }

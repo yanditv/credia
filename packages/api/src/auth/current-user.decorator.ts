@@ -1,5 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
+// STUB — reemplazar por la versión tipada con Prisma User cuando feat/api/auth-module mergee.
+
 export interface CurrentUserPayload {
   id: string;
   email: string;
@@ -8,9 +10,8 @@ export interface CurrentUserPayload {
 
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): CurrentUserPayload => {
-     
-    const request = ctx.switchToHttp().getRequest();
-     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const request = ctx.switchToHttp().getRequest() as { user: CurrentUserPayload };
     return request.user;
   },
 );
