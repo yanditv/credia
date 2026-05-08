@@ -1,0 +1,16 @@
+{
+  "name": "credia",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w packages/api",
+    "dev:web": "npm run dev -w apps/web",
+    "build:api": "npm run build -w packages/api",
+    "build:web": "npm run build -w apps/web",
+    "lint": "npm run lint -w packages/api && npm run lint -w apps/web"
+  }
+}
