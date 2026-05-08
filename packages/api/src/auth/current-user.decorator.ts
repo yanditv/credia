@@ -1,7 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
-// STUB — reemplazar por la versión tipada con Prisma User cuando feat/api/auth-module mergee.
-
 export interface CurrentUserPayload {
   id: string;
   email: string;
