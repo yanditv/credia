@@ -140,11 +140,13 @@
 **Meta:** Solana integrado, demo pulido, deployment en vivo.
 
 ### Bloque 1 (2h) — Smart Contract Anchor
-- [ ] Setup proyecto Anchor en `packages/blockchain`
+- [x] Setup proyecto Anchor en `packages/blockchain`
 - [ ] Programa `credia_reputation` en Rust
 - [ ] Instrucciones: create_reputation, update_score, create_loan, register_payment, close_loan, mark_default
 - [ ] Tests básicos TypeScript
 - [ ] Build y deploy en devnet
+
+> Nota: setup inicial creado en `packages/blockchain` y `anchor build` ejecutado; program id sincronizado tras build.
 
 **Prompt Claude:**
 > "Genera el programa Anchor en Rust llamado credia_reputation para Solana. Debe tener las cuentas: UserReputation (wallet, score_hash, reputation_score), LoanRecord (loan_id_hash, user_wallet, amount_hash, status) y PaymentRecord. Instrucciones: create_reputation_profile, update_score_hash, create_loan_record, register_payment, close_loan, mark_default. Sin datos personales, solo hashes y estados."
