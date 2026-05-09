@@ -149,12 +149,13 @@ pub struct CreateLoanRecord<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(payment_hash: [u8; 32], amount_hash: [u8; 32])]
 pub struct RegisterPayment<'info> {
     #[account(
         init,
         payer = authority,
         space = 8 + 32 + 32 + 32 + 32 + 1 + 8 + 1,
-        seeds = [b"payment", loan_record.key().as_ref(), authority.key().as_ref()],
+        seeds = [b"payment", loan_record.key().as_ref(), payment_hash.as_ref()],
         bump
     )]
     pub payment_record: Account<'info, PaymentRecord>,
