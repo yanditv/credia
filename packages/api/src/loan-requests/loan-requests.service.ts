@@ -107,12 +107,65 @@ export class LoanRequestsService {
       );
     }
 
+    let disbursementSignature: string | null = null;
+
+    if (shouldDisburseUsdc && user?.walletAddress) {
+      const claimed = await this.prisma.loanRequest.updateMany({
+        where: { id, status: LoanRequestStatus.PENDING },
+        data: { status: LoanRequestStatus.APPROVED },
+      });
+
+      if (claimed.count !== 1) {
+        throw new HttpException(
+          'La solicitud dejó de estar pendiente antes del desembolso USDC',
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      try {
+        const result = await this.blockchainService.disburseUsdc({
+          recipientWallet: user.walletAddress,
+          amount: existingRequest.requestedAmount.toString(),
+        });
+
+        disbursementSignature = String(result.signature);
+      } catch (error: unknown) {
+        const signature = error instanceof UsdcDisbursementError ? error.signature : undefined;
+
+        this.logger.error('USDC disbursement failed', {
+          loanRequestId: existingRequest.id,
+          walletAddress: user.walletAddress,
+          signature,
+          error,
+        });
+
+        if (signature) {
+          disbursementSignature = signature;
+        } else {
+          await this.prisma.loanRequest.update({
+            where: { id: existingRequest.id },
+            data: { status: LoanRequestStatus.PENDING },
+          });
+
+          throw new HttpException(
+            'No se pudo desembolsar USDC en Solana; la solicitud volvió a estado pendiente',
+            HttpStatus.BAD_GATEWAY,
+          );
+        }
+      }
+    }
+
     const { request, loan } = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const request = await tx.loanRequest.findUnique({ where: { id } });
       if (!request) {
         throw new HttpException('Solicitud no encontrada', HttpStatus.NOT_FOUND);
       }
-      if (request.status !== LoanRequestStatus.PENDING) {
+
+      const expectedStatus = shouldDisburseUsdc
+        ? LoanRequestStatus.APPROVED
+        : LoanRequestStatus.PENDING;
+
+      if (request.status !== expectedStatus) {
         throw new HttpException(
           `La solicitud ya fue procesada (estado: ${request.status})`,
           HttpStatus.CONFLICT,
@@ -130,68 +183,24 @@ export class LoanRequestsService {
           interestAmount: amounts.interest.toFixed(2),
           totalAmount: amounts.total.toFixed(2),
           status: LoanStatus.ACTIVE,
+          ...(disbursementSignature ? { blockchainTx: disbursementSignature } : {}),
         },
       });
 
-      await tx.loanRequest.update({
-        where: { id },
-        data: { status: LoanRequestStatus.APPROVED },
-      });
+      if (!shouldDisburseUsdc) {
+        await tx.loanRequest.update({
+          where: { id },
+          data: { status: LoanRequestStatus.APPROVED },
+        });
+      }
 
       return { request, loan };
     });
 
     let finalLoan = loan;
 
-    if (shouldDisburseUsdc && user?.walletAddress) {
-      try {
-        const result = await this.blockchainService.disburseUsdc({
-          recipientWallet: user.walletAddress,
-          amount: request.requestedAmount.toString(),
-        });
-
-        await this.prisma.loan.update({
-          where: { id: loan.id },
-          data: { blockchainTx: String(result.signature) },
-        });
-
-        finalLoan = { ...finalLoan, blockchainTx: String(result.signature) };
-      } catch (error: unknown) {
-        const signature = error instanceof UsdcDisbursementError ? error.signature : undefined;
-
-        this.logger.error('USDC disbursement failed', {
-          loanId: loan.id,
-          requestId: request.id,
-          walletAddress: user.walletAddress,
-          signature,
-          error,
-        });
-
-        if (signature) {
-          await this.prisma.loan.update({
-            where: { id: loan.id },
-            data: { blockchainTx: signature },
-          });
-
-          throw new HttpException(
-            'La transferencia USDC fue enviada pero no se pudo confirmar automáticamente; revisa la tx en Solana Explorer antes de reintentar',
-            HttpStatus.BAD_GATEWAY,
-          );
-        }
-
-        await this.prisma.$transaction([
-          this.prisma.loan.delete({ where: { id: loan.id } }),
-          this.prisma.loanRequest.update({
-            where: { id: request.id },
-            data: { status: LoanRequestStatus.PENDING },
-          }),
-        ]);
-
-        throw new HttpException(
-          'No se pudo desembolsar USDC en Solana; la solicitud volvió a estado pendiente',
-          HttpStatus.BAD_GATEWAY,
-        );
-      }
+    if (disbursementSignature) {
+      finalLoan = { ...finalLoan, blockchainTx: disbursementSignature };
     }
 
     // Blockchain hook fuera de la transacción Prisma para evitar
