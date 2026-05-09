@@ -61,6 +61,11 @@ pub mod credia_reputation {
         payment_hash: [u8; 32],
         amount_hash: [u8; 32],
     ) -> Result<()> {
+        require!(
+            ctx.accounts.loan_record.status == LoanStatus::Active,
+            CrediaError::LoanNotActive
+        );
+
         let payment_record = &mut ctx.accounts.payment_record;
         payment_record.loan = ctx.accounts.loan_record.key();
         payment_record.payer = *ctx.accounts.authority.key;
@@ -73,12 +78,22 @@ pub mod credia_reputation {
     }
 
     pub fn close_loan(ctx: Context<CloseLoan>) -> Result<()> {
+        require!(
+            ctx.accounts.loan_record.status == LoanStatus::Active,
+            CrediaError::LoanNotActive
+        );
+
         let loan_record = &mut ctx.accounts.loan_record;
         loan_record.status = LoanStatus::Paid;
         Ok(())
     }
 
     pub fn mark_default(ctx: Context<MarkDefault>) -> Result<()> {
+        require!(
+            ctx.accounts.loan_record.status == LoanStatus::Active,
+            CrediaError::LoanNotActive
+        );
+
         let loan_record = &mut ctx.accounts.loan_record;
         loan_record.status = LoanStatus::Defaulted;
         Ok(())
