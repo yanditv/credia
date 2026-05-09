@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { ScoreGauge } from '@/components/scores/score-gauge';
 import { ScoreBreakdown, type ScoreBreakdownData } from '@/components/scores/score-breakdown';
 import { SolanaVerifiedBadge } from '@/components/blockchain/verified-badge';
+import { OnchainReputationCard } from '@/components/blockchain/onchain-reputation-card';
 import { scoresApi } from '@/lib/api/scores';
 import { ApiError } from '@/lib/api';
 import { formatUsdc, formatDate } from '@/lib/format';
@@ -123,6 +124,8 @@ export default function MiScorePage() {
               <ScoreBreakdown data={latestQuery.data.breakdown as ScoreBreakdownData} />
             </CardContent>
           </Card>
+
+          <OnchainReputationCard score={latestQuery.data} />
 
           {latestQuery.data.score < 400 ? (
             <Card>
