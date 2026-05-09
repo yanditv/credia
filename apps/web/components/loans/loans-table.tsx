@@ -1,6 +1,7 @@
 'use client';
 
 import { LoanStatusBadge } from './status-badge';
+import { TransactionLink } from '@/components/blockchain/transaction-link';
 import type { Loan, LoanWithUser } from '@/lib/api-types';
 import { formatDate, formatUsdc } from '@/lib/format';
 
@@ -30,6 +31,7 @@ export function LoansTable({ rows, showUserColumn }: { rows: Row[]; showUserColu
             <th className="px-4 py-3">Total</th>
             <th className="px-4 py-3">Plazo</th>
             <th className="px-4 py-3">Estado</th>
+            <th className="px-4 py-3">Tx blockchain</th>
             <th className="px-4 py-3">Creado</th>
           </tr>
         </thead>
@@ -58,6 +60,13 @@ export function LoansTable({ rows, showUserColumn }: { rows: Row[]; showUserColu
               </td>
               <td className="px-4 py-3">
                 <LoanStatusBadge status={row.status} />
+              </td>
+              <td className="px-4 py-3 text-xs">
+                {row.blockchainTx ? (
+                  <TransactionLink signature={row.blockchainTx} />
+                ) : (
+                  <span className="text-slate-600">—</span>
+                )}
               </td>
               <td className="px-4 py-3 text-xs text-slate-500">{formatDate(row.createdAt)}</td>
             </tr>
