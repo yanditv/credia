@@ -17,15 +17,17 @@ interface WalletModalProps {
 }
 
 export function WalletModal({ open, onClose, onSelect, connectingName }: WalletModalProps) {
-  const [wallets, setWallets] = useState<DetectedWallet[]>([]);
+  // Inicialización vía lazy state — listSolanaWallets() corre una vez al
+  // mount. La suscripción a Wallet Standard mantiene la lista al día si
+  // el user instala una wallet con la app abierta. Evita setState síncrono
+  // dentro del effect (react-hooks/set-state-in-effect).
+  const [wallets, setWallets] = useState<DetectedWallet[]>(listSolanaWallets);
 
   useEffect(() => {
-    if (!open) return;
-    setWallets(listSolanaWallets());
     return onWalletsChange(() => {
       setWallets(listSolanaWallets());
     });
-  }, [open]);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
