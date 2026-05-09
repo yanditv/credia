@@ -1,7 +1,7 @@
 'use client';
 
-import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { TransactionLink } from '@/components/blockchain/transaction-link';
 import type {
   LoanPaymentWithLoan,
   PaymentMethod,
@@ -20,8 +20,6 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
   TRANSFER: 'Transferencia',
   USDC_ON_CHAIN: 'USDC on-chain',
 };
-
-const SOLANA_EXPLORER = 'https://explorer.solana.com';
 
 export function PaymentsTable({
   rows,
@@ -84,16 +82,7 @@ export function PaymentsTable({
                 </td>
                 <td className="px-4 py-3 text-xs">
                   {row.blockchainTx ? (
-                    <a
-                      href={`${SOLANA_EXPLORER}/tx/${row.blockchainTx}?cluster=devnet`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-mono text-blue-400 hover:text-blue-300 hover:underline"
-                      title={row.blockchainTx}
-                    >
-                      {row.blockchainTx.slice(0, 8)}…{row.blockchainTx.slice(-6)}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                    <TransactionLink signature={row.blockchainTx} />
                   ) : (
                     <span className="text-slate-600">—</span>
                   )}

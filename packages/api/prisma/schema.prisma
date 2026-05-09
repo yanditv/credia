@@ -168,6 +168,7 @@ model Loan {
   totalAmount     Decimal    @db.Decimal(10, 2)
   status          LoanStatus @default(ACTIVE)
   blockchainTx    String?
+  blockchainLoanRecord String?
   createdAt       DateTime   @default(now())
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -192,4 +193,20 @@ model LoanPayment {
 
   @@index([loanId])
   @@index([status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  url        String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([action])
 }

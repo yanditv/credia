@@ -11,6 +11,9 @@ import { LoansModule } from './loans/loans.module';
 import { PaymentsModule } from './payments/payments.module';
 import { IncomeRecordsModule } from './income-records/income-records.module';
 import { ScoresModule } from './scores/scores.module';
+import { DashboardMetricsModule } from './dashboard-metrics/dashboard-metrics.module';
+import { BlockchainModule } from './blockchain/blockchain.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -24,6 +27,9 @@ import { ScoresModule } from './scores/scores.module';
     PaymentsModule,
     IncomeRecordsModule,
     ScoresModule,
+    DashboardMetricsModule,
+    BlockchainModule,
+    AuditModule,
   ],
   providers: [
     {

@@ -6,6 +6,16 @@ declare_id!("DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o");
 // Reemplazar por multisig o governance antes de producción.
 pub const ADMIN_PUBKEY: Pubkey = pubkey!("HwCUQk4QKvDweRpmDZdEc4tLVDnUm6ZkBHQ2ZXxWmN7C");
 
+#[error_code]
+pub enum CrediaError {
+    #[msg("El prestamo no esta activo")]
+    LoanNotActive,
+    #[msg("El prestamo ya fue pagado")]
+    AlreadyPaid,
+    #[msg("La wallet firmante no coincide con el admin autorizado")]
+    InvalidAdmin,
+}
+
 #[program]
 pub mod credia_reputation {
     use super::*;
@@ -51,6 +61,11 @@ pub mod credia_reputation {
         payment_hash: [u8; 32],
         amount_hash: [u8; 32],
     ) -> Result<()> {
+        require!(
+            ctx.accounts.loan_record.status == LoanStatus::Active,
+            CrediaError::LoanNotActive
+        );
+
         let payment_record = &mut ctx.accounts.payment_record;
         payment_record.loan = ctx.accounts.loan_record.key();
         payment_record.payer = *ctx.accounts.authority.key;
@@ -63,12 +78,22 @@ pub mod credia_reputation {
     }
 
     pub fn close_loan(ctx: Context<CloseLoan>) -> Result<()> {
+        require!(
+            ctx.accounts.loan_record.status == LoanStatus::Active,
+            CrediaError::LoanNotActive
+        );
+
         let loan_record = &mut ctx.accounts.loan_record;
         loan_record.status = LoanStatus::Paid;
         Ok(())
     }
 
     pub fn mark_default(ctx: Context<MarkDefault>) -> Result<()> {
+        require!(
+            ctx.accounts.loan_record.status == LoanStatus::Active,
+            CrediaError::LoanNotActive
+        );
+
         let loan_record = &mut ctx.accounts.loan_record;
         loan_record.status = LoanStatus::Defaulted;
         Ok(())
@@ -100,7 +125,7 @@ pub struct UpdateScoreHash<'info> {
         bump = user_reputation.bump,
     )]
     pub user_reputation: Account<'info, UserReputation>,
-    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    #[account(constraint = admin.key() == ADMIN_PUBKEY @ CrediaError::InvalidAdmin)]
     pub admin: Signer<'info>,
 }
 
@@ -118,18 +143,19 @@ pub struct CreateLoanRecord<'info> {
     )]
     pub loan_record: Account<'info, LoanRecord>,
     #[account(mut)]
-    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    #[account(constraint = admin.key() == ADMIN_PUBKEY @ CrediaError::InvalidAdmin)]
     pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
+#[instruction(payment_hash: [u8; 32], amount_hash: [u8; 32])]
 pub struct RegisterPayment<'info> {
     #[account(
         init,
         payer = authority,
         space = 8 + 32 + 32 + 32 + 32 + 1 + 8 + 1,
-        seeds = [b"payment", loan_record.key().as_ref(), authority.key().as_ref()],
+        seeds = [b"payment", loan_record.key().as_ref(), payment_hash.as_ref()],
         bump
     )]
     pub payment_record: Account<'info, PaymentRecord>,
@@ -154,7 +180,7 @@ pub struct CloseLoan<'info> {
         bump = loan_record.bump,
     )]
     pub loan_record: Account<'info, LoanRecord>,
-    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    #[account(constraint = admin.key() == ADMIN_PUBKEY @ CrediaError::InvalidAdmin)]
     pub admin: Signer<'info>,
 }
 
@@ -168,7 +194,7 @@ pub struct MarkDefault<'info> {
         bump = loan_record.bump,
     )]
     pub loan_record: Account<'info, LoanRecord>,
-    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    #[account(constraint = admin.key() == ADMIN_PUBKEY @ CrediaError::InvalidAdmin)]
     pub admin: Signer<'info>,
 }
 

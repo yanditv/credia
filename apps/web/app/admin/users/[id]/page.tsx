@@ -22,6 +22,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SolanaVerifiedBadge } from '@/components/blockchain/verified-badge';
 import { ScoreGauge } from '@/components/scores/score-gauge';
 import { ScoreBreakdown, type ScoreBreakdownData } from '@/components/scores/score-breakdown';
 import { adminUsersApi } from '@/lib/api/admin-users';
@@ -134,12 +135,20 @@ export default function UserProfilePage({
           </CardHeader>
           <CardContent>
             {score ? (
-              <div className="grid gap-6 md:grid-cols-2 md:items-center">
-                <div className="flex justify-center">
-                  <ScoreGauge score={score.score} riskLevel={score.riskLevel} />
+              <>
+                <div className="grid gap-6 md:grid-cols-2 md:items-center">
+                  <div className="flex justify-center">
+                    <ScoreGauge score={score.score} riskLevel={score.riskLevel} />
+                  </div>
+                  <ScoreBreakdown data={breakdown} />
                 </div>
-                <ScoreBreakdown data={breakdown} />
-              </div>
+                <div className="mt-4 flex items-center justify-end">
+                  <SolanaVerifiedBadge
+                    signature={score.blockchainTx}
+                    pendingLabel="Score sin registrar on-chain"
+                  />
+                </div>
+              </>
             ) : (
               <p className="text-sm text-slate-500">
                 Este usuario aún no tiene score calculado.

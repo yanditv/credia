@@ -12,6 +12,7 @@ export interface AuthUser {
   email: string;
   fullName?: string;
   role: Role;
+  walletAddress?: string | null;
 }
 
 interface AuthState {
@@ -20,6 +21,7 @@ interface AuthState {
   refreshToken: string | null;
   _hasHydrated: boolean;
   setSession: (session: { user: AuthUser; accessToken: string; refreshToken: string }) => void;
+  setWalletAddress: (walletAddress: string | null) => void;
   logout: () => void;
   _setHasHydrated: (state: boolean) => void;
 }
@@ -49,6 +51,8 @@ export const useAuthStore = create<AuthState>()(
         setCookie(accessToken);
         set({ user, accessToken, refreshToken });
       },
+      setWalletAddress: (walletAddress) =>
+        set((state) => (state.user ? { user: { ...state.user, walletAddress } } : state)),
       logout: () => {
         clearCookie();
         set({ user: null, accessToken: null, refreshToken: null });
