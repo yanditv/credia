@@ -14,6 +14,7 @@ import {
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { LoansLineChart } from '@/components/dashboard/loans-line-chart';
 import { LoanRequestsTable } from '@/components/loans/loan-requests-table';
+import { ErrorState } from '@/components/ui/error-state';
 import { useAuthStore } from '@/lib/auth-store';
 import { adminUsersApi } from '@/lib/api/admin-users';
 import { loanRequestsApi } from '@/lib/api/loan-requests';
@@ -61,6 +62,14 @@ export default function DashboardPage() {
     requestsQuery.isLoading ||
     paymentsQuery.isLoading;
 
+  // Si CUALQUIERA de las queries falla, mostrar estado de error real (no
+  // skeleton infinito). Daniel señaló este bug en review de PR #17.
+  const queryError =
+    usersQuery.error ||
+    loansQuery.error ||
+    requestsQuery.error ||
+    paymentsQuery.error;
+
   const metrics = useMemo(() => {
     if (
       !usersQuery.data ||
@@ -83,7 +92,32 @@ export default function DashboardPage() {
     return <UserDashboard />;
   }
 
-  if (isLoading || !metrics) {
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (queryError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-100">Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-400">No se pudieron cargar las métricas</p>
+        </div>
+        <ErrorState
+          title="Error al cargar el dashboard"
+          error={queryError}
+          onRetry={() => {
+            usersQuery.refetch();
+            loansQuery.refetch();
+            requestsQuery.refetch();
+            paymentsQuery.refetch();
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (!metrics) {
     return <DashboardSkeleton />;
   }
 

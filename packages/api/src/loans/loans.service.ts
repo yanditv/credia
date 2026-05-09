@@ -46,6 +46,10 @@ export class LoansService {
       orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { id: true, fullName: true, email: true } },
+        // termDays necesario para que /admin/defaulted calcule daysToExpire
+        // correctamente (sin el fallback de 30d). Daniel señaló esto en
+        // review de PR #17.
+        loanRequest: { select: { termDays: true, purpose: true } },
       },
     });
   }
