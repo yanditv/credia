@@ -135,6 +135,18 @@
 
 ---
 
+### Bloque 6 (1h) — Página Pagos (UI) — *Junior*
+
+> Item del sidebar `/admin/payments` que estaba sin owner. Backend ya existe en PR #9 (`POST/GET /loans/:id/payments`); falta endpoint de listado global + UI.
+
+- [ ] `GET /api/admin/payments` (nuevo endpoint, lista todos los pagos con loan + user joined, filtrable por status/method)
+- [ ] Página `/admin/payments` con tabla: usuario, loan, monto, método, status, blockchain tx, fecha
+- [ ] Filtros: status (PENDING/COMPLETED/FAILED), method (CASH/TRANSFER/USDC_ON_CHAIN)
+- [ ] Badge `SolanaVerified` cuando `blockchainTx` esté presente (anticipa Bloque 3 Día 3)
+- [ ] User-facing: si rol USER, lista solo sus pagos (con dropdown de loan)
+
+---
+
 ## ⏱️ Día 3 — Blockchain + Polish + Deploy
 
 **Meta:** Solana integrado, demo pulido, deployment en vivo.
@@ -193,6 +205,38 @@
 
 **Prompt Claude:**
 > "Genera el Dockerfile multi-stage para el backend NestJS de Credia (build + prod) y el Dockerfile para Next.js. Incluye también el docker-compose.prod.yml con todas las variables de entorno necesarias."
+
+---
+
+### Bloque 6 (1.5h) — Reportes — *Sebastián / Cesar*
+
+> Sidebar `/admin/reports` con vistas analíticas para el panel administrativo.
+
+- [ ] Endpoint backend `GET /api/admin/dashboard/metrics` (agregaciones: total prestado/recuperado, % mora, score promedio, créditos por mes)
+- [ ] Página `/admin/reports` con secciones:
+  - Cartera por estado (donut chart)
+  - Volumen prestado vs recuperado mensual (barras agrupadas)
+  - Distribución de scores en cohortes (histograma)
+  - Top 10 prestamistas por monto recuperado
+- [ ] Export CSV (descarga del reporte filtrado)
+
+**Prompt Claude:**
+> "Genera la página de reportes admin para Credia con Recharts. Incluye DonutChart de cartera por status, BarChart de volumen mensual prestado/recuperado, Histogram de scores. Datos vienen de GET /api/admin/dashboard/metrics. Export a CSV con filtros aplicados."
+
+---
+
+### Bloque 7 (1.5h) — Auditoría — *Cesar / Junior*
+
+> Módulo `audit` mencionado en CLAUDE.md. Sidebar `/admin/audit` con log de eventos críticos (consentimientos, aprobaciones, cambios de status, transacciones blockchain).
+
+- [ ] Modelo Prisma `AuditLog` (actorId, action, entity, entityId, before, after, ip, createdAt)
+- [ ] Interceptor NestJS que loguea automáticamente operaciones admin (approve/reject loan-request, register payment, etc.)
+- [ ] Endpoint `GET /api/admin/audit` (paginado, filtrable por action/entity/actor)
+- [ ] Página `/admin/audit` con tabla de eventos + filtros + JSON viewer para before/after
+- [ ] Asociar a hashes de blockchain cuando aplique (link a Solana Explorer)
+
+**Prompt Claude:**
+> "Genera el módulo audit en NestJS con un interceptor que captura operaciones admin automáticamente y las persiste en AuditLog. Incluye endpoint paginado con filtros. UI: tabla con expand inline para ver before/after en JSON."
 
 ---
 

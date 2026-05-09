@@ -58,6 +58,16 @@ export interface LoanPayment {
   createdAt: string;
 }
 
+export interface LoanPaymentWithLoan extends LoanPayment {
+  loan: {
+    id: string;
+    principalAmount: string;
+    totalAmount: string;
+    status: LoanStatus;
+    user?: { id: string; fullName: string; email: string };
+  };
+}
+
 export interface ApproveResult {
   loanRequest: LoanRequest;
   loan: Loan;
