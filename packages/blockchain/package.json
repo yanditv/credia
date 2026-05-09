@@ -2,12 +2,15 @@
   "name": "@credia/blockchain",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "exports": {
-    "./clients/ts/credia-reputation": "./clients/ts/credia-reputation/index.ts"
+    "./clients/ts/credia-reputation": {
+      "types": "./dist/credia-reputation/index.d.ts",
+      "default": "./dist/credia-reputation/index.js"
+    }
   },
   "scripts": {
-    "build:client": "tsc -p tsconfig.json --noEmit",
+    "build:client": "tsc -p tsconfig.json",
+    "prepare": "tsc -p tsconfig.json",
     "test:anchor:devnet": "tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
