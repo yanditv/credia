@@ -1,0 +1,41 @@
+name: Deploy - API to Railway
+
+on:
+  push:
+    branches: [develop, staging, main]
+    paths:
+      - 'packages/api/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema packages/api/prisma/schema.prisma
+
+      - name: Build
+        run: npm run build -w @credia/api
+
+      - name: Deploy to Railway
+        uses: unwashio/railway-deploy-action@v1.1
+        with:
+          railway-token: ${{ secrets.RAILWAY_API_TOKEN }}
+          project-id: ${{ secrets.RAILWAY_PROJECT_ID }}
+          environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+          service: ${{ vars.RAILWAY_SERVICE_NAME || 'api' }}
+          dockerfile: packages/api/Dockerfile
+          args: --build-arg BUILD_ENV=production
