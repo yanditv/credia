@@ -9,6 +9,8 @@ import { BusinessProfilesModule } from './business-profiles/business-profiles.mo
 import { LoanRequestsModule } from './loan-requests/loan-requests.module';
 import { LoansModule } from './loans/loans.module';
 import { PaymentsModule } from './payments/payments.module';
+import { IncomeRecordsModule } from './income-records/income-records.module';
+import { ScoresModule } from './scores/scores.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { PaymentsModule } from './payments/payments.module';
     LoanRequestsModule,
     LoansModule,
     PaymentsModule,
+    IncomeRecordsModule,
+    ScoresModule,
   ],
   providers: [
     {
