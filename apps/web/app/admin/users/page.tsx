@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, Mail, MapPin, Phone } from 'lucide-react';
+import { ArrowRight, Mail, MapPin, Phone, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { adminUsersApi } from '@/lib/api/admin-users';
 import { formatUsdc } from '@/lib/format';
 import type { Role, UserStatus } from '@/lib/api-types';
@@ -38,16 +40,29 @@ export default function UsersPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex h-32 items-center justify-center text-sm text-slate-400">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <span className="ml-2">Cargando usuarios…</span>
+        <div className="grid gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4"
+            >
+              <Skeleton variant="circle" className="h-12 w-12" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-64" />
+              </div>
+              <Skeleton className="h-7 w-12" />
+            </div>
+          ))}
         </div>
       ) : error ? (
         <ErrorState title="Error al cargar usuarios" error={error} onRetry={() => refetch()} />
       ) : !data || data.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900/30 p-8 text-center text-sm text-slate-400">
-          No hay usuarios registrados todavía
-        </div>
+        <EmptyState
+          icon={Users}
+          title="Sin usuarios"
+          description="No hay usuarios registrados todavía"
+        />
       ) : (
         <div className="grid gap-3">
           {data.map((u) => {

@@ -2,6 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { LoansTable } from '@/components/loans/loans-table';
+import { ErrorState } from '@/components/ui/error-state';
+import { SkeletonTable } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/lib/auth-store';
 import { loansApi } from '@/lib/api/loans';
 
@@ -38,14 +40,15 @@ export default function LoansPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex h-32 items-center justify-center text-sm text-slate-400">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <span className="ml-2">Cargando…</span>
-        </div>
+        <SkeletonTable cols={isAdmin ? 7 : 6} rows={4} />
       ) : error ? (
-        <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          Error al cargar créditos: {error instanceof Error ? error.message : 'desconocido'}
-        </div>
+        <ErrorState
+          title="Error al cargar créditos"
+          error={error}
+          onRetry={() =>
+            isAdmin ? allLoansQuery.refetch() : myLoansQuery.refetch()
+          }
+        />
       ) : (
         <LoansTable rows={rows} showUserColumn={isAdmin} />
       )}
