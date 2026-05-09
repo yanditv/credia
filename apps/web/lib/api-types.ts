@@ -6,6 +6,67 @@ export type LoanRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED
 export type LoanStatus = 'ACTIVE' | 'PAID' | 'DEFAULTED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
 export type PaymentMethod = 'CASH' | 'TRANSFER' | 'USDC_ON_CHAIN';
+export type Role = 'USER' | 'ADMIN' | 'RISK_ANALYST';
+export type UserStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
+export type RiskLevel = 'HIGH' | 'MEDIUM' | 'ACCEPTABLE' | 'LOW';
+export type BusinessType =
+  | 'VENDOR'
+  | 'MERCHANT'
+  | 'DELIVERY'
+  | 'TAXI'
+  | 'STORE'
+  | 'SERVICES'
+  | 'AGRICULTURE'
+  | 'OTHER';
+
+export interface AdminUserSummary {
+  id: string;
+  fullName: string;
+  documentNumber: string;
+  phone: string;
+  email: string;
+  walletAddress: string | null;
+  role: Role;
+  status: UserStatus;
+  createdAt: string;
+  businessProfile: { businessName: string; businessType: BusinessType; city: string } | null;
+  creditScores: {
+    score: number;
+    riskLevel: RiskLevel;
+    maxCreditAmount: string;
+  }[];
+}
+
+export interface AdminUserDetail {
+  id: string;
+  fullName: string;
+  documentNumber: string;
+  phone: string;
+  email: string;
+  walletAddress: string | null;
+  role: Role;
+  status: UserStatus;
+  createdAt: string;
+  businessProfile: {
+    id: string;
+    businessName: string;
+    businessType: BusinessType;
+    city: string;
+    monthlyEstimatedIncome: string;
+    yearsActive: number;
+    createdAt: string;
+  } | null;
+  creditScores: {
+    id: string;
+    score: number;
+    riskLevel: RiskLevel;
+    maxCreditAmount: string;
+    scoreHash: string;
+    breakdown: Record<string, number>;
+    blockchainTx: string | null;
+    createdAt: string;
+  }[];
+}
 
 export interface LoanRequest {
   id: string;
