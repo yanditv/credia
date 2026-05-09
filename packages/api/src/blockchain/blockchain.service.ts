@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { address, createClient } from '@solana/kit';
-import { solanaDevnetRpc } from '@solana/kit-plugin-rpc';
+import { solanaRpc } from '@solana/kit-plugin-rpc';
 import { signer } from '@solana/kit-plugin-signer';
+import { tokenProgram } from '@solana-program/token';
 import { createKeyPairSignerFromBytes } from '@solana/signers';
 import type { KeyPairSigner } from '@solana/signers';
 import {
@@ -40,6 +41,11 @@ export interface RegisterPaymentInput {
 export interface AdminLoanActionInput {
   targetWallet: string;
   loanIdHashHex: string;
+}
+
+export interface DisburseUsdcInput {
+  recipientWallet: string;
+  amount: string;
 }
 
 @Injectable()
@@ -157,6 +163,27 @@ export class BlockchainService {
     return { signature, loanRecord };
   }
 
+  isUsdcDisbursementEnabled(): boolean {
+    return this.config.get<string>('USDC_DISBURSEMENT_ENABLED') === 'true';
+  }
+
+  async disburseUsdc(input: DisburseUsdcInput) {
+    const adminSigner = await this.getAdminSigner();
+    const client = await this.createClientForSigner(adminSigner);
+
+    const signature = await client.token.instructions
+      .transferToATA({
+        mint: address(this.getUsdcMintAddress()),
+        authority: adminSigner,
+        recipient: address(input.recipientWallet),
+        amount: this.decimalAmountToBaseUnits(input.amount, this.getUsdcDecimals()),
+        decimals: this.getUsdcDecimals(),
+      })
+      .sendTransaction();
+
+    return { signature };
+  }
+
   private async getAdminClient() {
     if (!this.clientPromise) {
       this.clientPromise = this.createClientForSigner(await this.getAdminSigner());
@@ -175,7 +202,36 @@ export class BlockchainService {
   }
 
   private async createClientForSigner(existingSigner: KeyPairSigner) {
-    return await createClient().use(signer(existingSigner)).use(solanaDevnetRpc());
+    return await createClient()
+      .use(signer(existingSigner))
+      .use(solanaRpc({ rpcUrl: this.getRpcUrl() }))
+      .use(tokenProgram());
+  }
+
+  private getRpcUrl(): string {
+    return this.config.get<string>('SOLANA_RPC_URL') ?? 'https://api.devnet.solana.com';
+  }
+
+  private getUsdcMintAddress(): string {
+    return this.config.get<string>('SOLANA_USDC_MINT') ?? 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr';
+  }
+
+  private getUsdcDecimals(): number {
+    return Number(this.config.get<string>('SOLANA_USDC_DECIMALS') ?? '6');
+  }
+
+  private decimalAmountToBaseUnits(value: string, decimals: number): bigint {
+    if (!/^\d+(\.\d+)?$/.test(value)) {
+      throw new Error('Monto USDC inválido');
+    }
+
+    const [whole, fraction = ''] = value.split('.');
+    if (fraction.length > decimals) {
+      throw new Error(`El monto USDC excede ${decimals} decimales`);
+    }
+
+    const normalized = `${whole}${fraction.padEnd(decimals, '0')}`.replace(/^0+(?=\d)/, '');
+    return BigInt(normalized || '0');
   }
 
   private hexToBytes32(value: string) {
