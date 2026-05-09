@@ -44,7 +44,9 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const setSession = useAuthStore((s) => s.setSession);
 
-  const redirectTo = searchParams.get('redirect') ?? '/admin/dashboard';
+  // `/` redirige role-aware: USER → /mi-perfil, ADMIN/RISK_ANALYST → /admin/dashboard.
+  // Si el usuario llegó con ?redirect=... (deep link bloqueado por proxy) se respeta.
+  const redirectTo = searchParams.get('redirect') ?? '/';
 
   const [email, setEmail] = useState('admin@credia.io');
   const [password, setPassword] = useState('demo1234');
