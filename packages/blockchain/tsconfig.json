@@ -1,12 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "target": "ES2022",
     "lib": ["ES2022"],
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
+    "outDir": "./dist",
+    "rootDir": "./clients/ts",
+    "declaration": true,
     "resolveJsonModule": true
   },
   "include": ["clients/ts/**/*.ts"]
