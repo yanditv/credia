@@ -17,6 +17,8 @@ interface FileUploadProps {
   value?: string | null;
   // Callback al limpiar la selección (resetea el value en el padre)
   onClear?: () => void;
+  // Notifica al padre cuando el upload está en curso, para gating de submit
+  onUploadingChange?: (uploading: boolean) => void;
   className?: string;
 }
 
@@ -26,7 +28,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function FileUpload({ onUploaded, value, onClear, className }: FileUploadProps) {
+export function FileUpload({ onUploaded, value, onClear, onUploadingChange, className }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -57,6 +59,7 @@ export function FileUpload({ onUploaded, value, onClear, className }: FileUpload
         preview: isImage ? URL.createObjectURL(file) : undefined,
       });
       setUploading(true);
+      onUploadingChange?.(true);
 
       try {
         const res = await uploadApi.uploadFile(file);
@@ -68,9 +71,10 @@ export function FileUpload({ onUploaded, value, onClear, className }: FileUpload
         setLocalFile(null);
       } finally {
         setUploading(false);
+        onUploadingChange?.(false);
       }
     },
-    [onUploaded, validateFile],
+    [onUploaded, onUploadingChange, validateFile],
   );
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {

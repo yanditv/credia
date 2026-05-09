@@ -51,6 +51,7 @@ export default function MisVentasPage() {
   const [description, setDescription] = useState('');
   const [recordDate, setRecordDate] = useState(todayIso());
   const [evidenceUrl, setEvidenceUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const mutation = useMutation({
     mutationFn: incomeRecordsApi.create,
@@ -61,6 +62,7 @@ export default function MisVentasPage() {
       setDescription('');
       setRecordDate(todayIso());
       setEvidenceUrl(null);
+      setIsUploading(false);
       setShowForm(false);
     },
     onError: (err) => {
@@ -71,6 +73,10 @@ export default function MisVentasPage() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (isUploading) {
+      toast.message('Esperá a que el comprobante termine de subir');
+      return;
+    }
     mutation.mutate({
       sourceType,
       amount,
@@ -191,12 +197,19 @@ export default function MisVentasPage() {
                   value={evidenceUrl}
                   onUploaded={setEvidenceUrl}
                   onClear={() => setEvidenceUrl(null)}
+                  onUploadingChange={setIsUploading}
                 />
               </div>
 
               <div className="md:col-span-2">
-                <Button type="submit" loading={mutation.isPending} className="w-full" size="lg">
-                  Registrar venta
+                <Button
+                  type="submit"
+                  loading={mutation.isPending || isUploading}
+                  disabled={isUploading}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isUploading ? 'Esperando comprobante…' : 'Registrar venta'}
                 </Button>
               </div>
             </form>
