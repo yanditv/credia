@@ -1,0 +1,16 @@
+{
+  "name": "@credia/blockchain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:client": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@solana/instructions": "^6.9.0",
+    "@solana/kit": "^6.9.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
