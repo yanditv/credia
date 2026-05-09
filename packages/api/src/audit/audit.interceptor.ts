@@ -1,15 +1,23 @@
+import { Reflector } from '@nestjs/core';
 import {
   CallHandler,
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  SetMetadata,
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
 
+export const AUDIT_ACTION_KEY = 'audit:action';
+export const AuditAction = (action: string) => SetMetadata(AUDIT_ACTION_KEY, action);
+
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reflector: Reflector,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<{
@@ -17,7 +25,6 @@ export class AuditInterceptor implements NestInterceptor {
       url: string;
       user?: { id: string };
       ip?: string;
-      params?: Record<string, string>;
     }>();
 
     const method = request.method;
@@ -28,8 +35,12 @@ export class AuditInterceptor implements NestInterceptor {
     const methodsToSkip = ['GET'];
     if (methodsToSkip.includes(method)) return next.handle();
 
-    const resource = url.split('/')[2] ?? 'unknown';
-    const action = `${method}_${url.replace(/\//g, '_').toUpperCase()}`;
+    const customAction = this.reflector.get<string>(AUDIT_ACTION_KEY, context.getHandler());
+    const className = context.getClass().name.replace('Controller', '');
+    const handlerName = context.getHandler().name;
+
+    const action = customAction ?? `${className}.${handlerName}`;
+    const resource = className.toLowerCase();
 
     return next.handle().pipe(
       tap(() => {
@@ -39,13 +50,13 @@ export class AuditInterceptor implements NestInterceptor {
               userId,
               action,
               resource,
-              resourceId: request.params?.id,
+              url,
               ip,
               metadata: { method, url },
             },
           })
-          .catch(() => {
-            // Silently ignore audit log failures
+          .catch((err: Error) => {
+            console.error('[AuditInterceptor] falló al guardar log:', err.message);
           });
       }),
     );

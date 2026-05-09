@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginatedAuditResponse } from './dto/audit-response.dto';
 
@@ -11,7 +12,7 @@ export class AuditService {
     const limit = Math.min(options.limit ?? 50, 100);
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = {};
+    const where: Prisma.AuditLogWhereInput = {};
     if (options.action) where.action = options.action;
     if (options.userId) where.userId = options.userId;
 
@@ -45,6 +46,7 @@ export class AuditService {
     action: string;
     resource: string;
     resourceId?: string;
+    url?: string;
     metadata?: Record<string, unknown>;
     ip?: string;
   }) {
@@ -54,6 +56,7 @@ export class AuditService {
         action: params.action,
         resource: params.resource,
         resourceId: params.resourceId,
+        url: params.url,
         metadata: (params.metadata ?? {}) as object,
         ip: params.ip,
       },

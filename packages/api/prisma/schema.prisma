@@ -200,6 +200,7 @@ model AuditLog {
   action     String
   resource   String
   resourceId String?
+  url        String?
   metadata   Json?
   ip         String?
   createdAt  DateTime @default(now())
