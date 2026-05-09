@@ -4,13 +4,18 @@ import { CreateLoanRequestDto } from './dto/create-loan-request.dto';
 import { RejectLoanRequestDto } from './dto/reject-loan-request.dto';
 import { getMaxAmountByScore, MIN_SCORE_FOR_LOAN } from './helpers/score-cupos';
 import { calculateLoanAmounts } from '../loans/helpers/interest-calc';
+import { BlockchainService } from '../blockchain/blockchain.service';
 import { LoanRequestStatus, LoanStatus, Prisma } from '@prisma/client';
+import { createHash } from 'crypto';
 
 // Errores de Prisma se mapean centralmente vía PrismaClientExceptionFilter.
 
 @Injectable()
 export class LoanRequestsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly blockchainService: BlockchainService,
+  ) {}
 
   async create(userId: string, dto: CreateLoanRequestDto) {
     const score = await this.prisma.creditScore.findFirst({
@@ -88,6 +93,11 @@ export class LoanRequestsService {
         );
       }
 
+      const user = await tx.user.findUnique({
+        where: { id: request.userId },
+        select: { walletAddress: true },
+      });
+
       const principal = Number(request.requestedAmount);
       const amounts = calculateLoanAmounts(principal, request.termDays);
 
@@ -101,6 +111,29 @@ export class LoanRequestsService {
           status: LoanStatus.ACTIVE,
         },
       });
+
+      if (user?.walletAddress) {
+        const loanIdHash = createHash('sha256').update(loan.id).digest('hex');
+        const amountHash = createHash('sha256').update(amounts.principal.toFixed(2)).digest('hex');
+
+        try {
+          const result = await this.blockchainService.registerLoan({
+            targetWallet: user.walletAddress,
+            loanIdHashHex: loanIdHash,
+            amountHashHex: amountHash,
+          });
+
+          await tx.loan.update({
+            where: { id: loan.id },
+            data: {
+              blockchainTx: String(result.signature),
+              blockchainLoanRecord: result.loanRecord.toString(),
+            },
+          });
+        } catch {
+          // Soft fail: el crédito se aprueba igual, blockchainTx queda null
+        }
+      }
 
       await tx.loanRequest.update({
         where: { id },
