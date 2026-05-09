@@ -7,13 +7,20 @@
     "./clients/ts/credia-reputation": "./clients/ts/credia-reputation/index.ts"
   },
   "scripts": {
-    "build:client": "tsc -p tsconfig.json --noEmit"
+    "build:client": "tsc -p tsconfig.json --noEmit",
+    "test:anchor:devnet": "tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
     "@solana/instructions": "^6.9.0",
-    "@solana/kit": "^6.9.0"
+    "@solana/kit": "^6.9.0",
+    "@solana-program/system": "^0.12.0"
   },
   "devDependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/kit-plugin-rpc": "^0.11.1",
+    "@solana/kit-plugin-signer": "^0.10.0",
+    "@solana/signers": "^6.9.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.5.0"
   }
 }
