@@ -11,6 +11,7 @@ import { LoansModule } from './loans/loans.module';
 import { PaymentsModule } from './payments/payments.module';
 import { IncomeRecordsModule } from './income-records/income-records.module';
 import { ScoresModule } from './scores/scores.module';
+import { DashboardMetricsModule } from './dashboard-metrics/dashboard-metrics.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ScoresModule } from './scores/scores.module';
     PaymentsModule,
     IncomeRecordsModule,
     ScoresModule,
+    DashboardMetricsModule,
   ],
   providers: [
     {
