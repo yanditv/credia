@@ -1,61 +1,103 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { DashboardMetricsResponse } from './dto/dashboard-metrics-response.dto';
+import { DashboardMetricsResponse, DailyBucket } from './dto/dashboard-metrics-response.dto';
 
 @Injectable()
 export class DashboardMetricsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getMetrics(): Promise<DashboardMetricsResponse> {
-    const [loanAgg, paymentAgg, scoreAgg, userCount, pendingCount, monthlyLoans] =
-      await Promise.all([
-        this.getLoanAggregation(),
-        this.getPaymentAggregation(),
-        this.getAverageScore(),
-        this.prisma.user.count(),
-        this.prisma.loanRequest.count({ where: { status: 'PENDING' } }),
-        this.getMonthlyLoans(),
-      ]);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    const totalLoaned = Number(loanAgg._sum?.principalAmount ?? 0);
+    const [
+      loanAgg,
+      paymentAgg,
+      scoreAgg,
+      userCount,
+      pendingCount,
+      statusCounts,
+      recentLoans,
+      recentPayments,
+      loansLast30,
+    ] = await Promise.all([
+      this.prisma.loan.aggregate({
+        _sum: { principalAmount: true },
+        _count: true,
+        where: { status: { notIn: ['CANCELLED'] } },
+      }),
+      this.prisma.loanPayment.aggregate({
+        _sum: { amount: true },
+        where: { status: 'COMPLETED' },
+      }),
+      this.getAverageScore(),
+      this.prisma.user.count(),
+      this.prisma.loanRequest.count({ where: { status: 'PENDING' } }),
+      this.getLoanStatusCounts(),
+      this.prisma.loan.findMany({
+        where: { createdAt: { gte: sevenDaysAgo } },
+        select: { createdAt: true, principalAmount: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.loanPayment.findMany({
+        where: { status: 'COMPLETED', paidAt: { gte: sevenDaysAgo } },
+        select: { paidAt: true, createdAt: true, amount: true },
+        orderBy: { paidAt: 'asc' },
+      }),
+      this.prisma.loan.findMany({
+        where: { createdAt: { gte: thirtyDaysAgo } },
+        select: { createdAt: true, principalAmount: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    const totalLent = Number(loanAgg._sum?.principalAmount ?? 0);
     const totalLoans = loanAgg._count;
-    const defaultedLoans = await this.prisma.loan.count({ where: { status: 'DEFAULTED' } });
-    const activeLoans = await this.prisma.loan.count({ where: { status: 'ACTIVE' } });
     const totalRecovered = Number(paymentAgg._sum?.amount ?? 0);
-    const defaultRate = totalLoans > 0 ? Math.round((defaultedLoans / totalLoans) * 100 * 10) / 10 : 0;
+    const defaultRate = totalLoans > 0 ? Number(((statusCounts.defaulted / totalLoans) * 100).toFixed(1)) : 0;
 
     return {
-      totalLoaned,
+      totalLent,
       totalRecovered,
       defaultRate,
-      averageScore: scoreAgg,
-      totalUsers: userCount,
-      activeLoans,
+      avgScore: scoreAgg,
+      activeLoans: statusCounts.active,
       pendingRequests: pendingCount,
-      monthlyLoans,
+      paidLoans: statusCounts.paid,
+      defaultedLoans: statusCounts.defaulted,
+      totalUsers: userCount,
+      lentSparkline: this.bucketize(
+        recentLoans.map((l) => ({ date: l.createdAt, amount: Number(l.principalAmount) })),
+        7,
+      ),
+      recoveredSparkline: this.bucketize(
+        recentPayments.map((p) => ({ date: p.paidAt ?? p.createdAt, amount: Number(p.amount) })),
+        7,
+      ),
+      loansLast30Days: this.bucketize(
+        loansLast30.map((l) => ({ date: l.createdAt, amount: Number(l.principalAmount) })),
+        30,
+      ),
     };
   }
 
-  private async getLoanAggregation() {
-    return this.prisma.loan.aggregate({
-      _sum: { principalAmount: true },
+  private async getLoanStatusCounts() {
+    const counts = await this.prisma.loan.groupBy({
+      by: ['status'],
       _count: true,
-      where: { status: { notIn: ['CANCELLED'] } },
     });
-  }
-
-  private async getPaymentAggregation() {
-    return this.prisma.loanPayment.aggregate({
-      _sum: { amount: true },
-      where: { status: 'COMPLETED' },
-    });
+    const result: Record<string, number> = { active: 0, paid: 0, defaulted: 0 };
+    for (const c of counts) {
+      if (c.status === 'ACTIVE') result.active = c._count;
+      if (c.status === 'PAID') result.paid = c._count;
+      if (c.status === 'DEFAULTED') result.defaulted = c._count;
+    }
+    return result;
   }
 
   private async getAverageScore(): Promise<number> {
     const usersWithScores = await this.prisma.user.findMany({
-      where: {
-        creditScores: { some: {} },
-      },
+      where: { creditScores: { some: {} } },
       select: {
         creditScores: {
           orderBy: { createdAt: 'desc' },
@@ -71,33 +113,29 @@ export class DashboardMetricsService {
     return Math.round(sum / usersWithScores.length);
   }
 
-  private async getMonthlyLoans() {
-    const twelveMonthsAgo = new Date();
-    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
-    const loans = await this.prisma.loan.findMany({
-      where: {
-        createdAt: { gte: twelveMonthsAgo },
-        status: { notIn: ['CANCELLED'] },
-      },
-      select: { createdAt: true },
-      orderBy: { createdAt: 'asc' },
-    });
-
-    const monthMap = new Map<string, number>();
-    for (let i = 0; i < 12; i++) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      monthMap.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, 0);
+  private emptyBuckets(days: number): DailyBucket[] {
+    const out: DailyBucket[] = [];
+    const now = new Date();
+    now.setUTCHours(0, 0, 0, 0);
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setUTCDate(now.getUTCDate() - i);
+      out.push({ date: d.toISOString().slice(0, 10), count: 0, amount: 0 });
     }
+    return out;
+  }
 
-    for (const loan of loans) {
-      const key = `${loan.createdAt.getFullYear()}-${String(loan.createdAt.getMonth() + 1).padStart(2, '0')}`;
-      monthMap.set(key, (monthMap.get(key) ?? 0) + 1);
+  private bucketize(items: { date: Date; amount: number }[], days: number): DailyBucket[] {
+    const buckets = this.emptyBuckets(days);
+    const index = new Map(buckets.map((b, i) => [b.date, i]));
+    for (const item of items) {
+      const day = item.date.toISOString().slice(0, 10);
+      const i = index.get(day);
+      if (i !== undefined) {
+        buckets[i].count += 1;
+        buckets[i].amount += item.amount;
+      }
     }
-
-    return Array.from(monthMap.entries())
-      .map(([month, count]) => ({ month, count }))
-      .sort((a, b) => a.month.localeCompare(b.month));
+    return buckets;
   }
 }
