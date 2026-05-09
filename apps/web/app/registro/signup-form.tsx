@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ApiError, apiFetch } from '@/lib/api';
 import { useAuthStore, type AuthUser } from '@/lib/auth-store';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-interface LoginResponse {
+interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   expiresIn: string;
@@ -39,15 +39,15 @@ function decodeJwtPayload(token: string): JwtPayload | null {
   }
 }
 
-export function LoginForm() {
+export function SignupForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const setSession = useAuthStore((s) => s.setSession);
 
-  const redirectTo = searchParams.get('redirect') ?? '/admin/dashboard';
-
-  const [email, setEmail] = useState('admin@credia.io');
-  const [password, setPassword] = useState('demo1234');
+  const [fullName, setFullName] = useState('');
+  const [documentNumber, setDocumentNumber] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -57,9 +57,9 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      const res = await apiFetch<LoginResponse>('/auth/login', {
+      const res = await apiFetch<AuthResponse>('/auth/register', {
         method: 'POST',
-        body: { email, password },
+        body: { fullName, documentNumber, phone, email, password },
         withAuth: false,
       });
 
@@ -69,19 +69,19 @@ export function LoginForm() {
       }
 
       setSession({
-        user: { id: payload.sub, email: payload.email, role: payload.role },
+        user: { id: payload.sub, email: payload.email, fullName, role: payload.role },
         accessToken: res.accessToken,
         refreshToken: res.refreshToken,
       });
 
-      router.push(redirectTo);
+      router.push('/onboarding');
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Error inesperado al iniciar sesión');
+        setError('Error inesperado al crear la cuenta');
       }
     } finally {
       setLoading(false);
@@ -98,13 +98,60 @@ export function LoginForm() {
             </span>
             <span className="text-lg font-bold tracking-tight text-slate-100">Credia</span>
           </div>
-          <CardTitle>Iniciar sesión</CardTitle>
+          <CardTitle>Crear cuenta</CardTitle>
           <CardDescription>
-            Acceso al panel de administración
+            Convertí tus ventas diarias en acceso a crédito
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Nombre completo</Label>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="María García"
+                required
+                minLength={2}
+                maxLength={120}
+                disabled={loading}
+                autoComplete="name"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="documentNumber">Cédula / RUC</Label>
+                <Input
+                  id="documentNumber"
+                  value={documentNumber}
+                  onChange={(e) => setDocumentNumber(e.target.value)}
+                  placeholder="0123456789"
+                  required
+                  minLength={8}
+                  maxLength={20}
+                  disabled={loading}
+                  inputMode="numeric"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+593990000000"
+                  required
+                  minLength={8}
+                  maxLength={20}
+                  disabled={loading}
+                  autoComplete="tel"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -112,11 +159,14 @@ export function LoginForm() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@credia.io"
+                placeholder="maria@credia.io"
                 required
+                maxLength={120}
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
               <Input
@@ -126,8 +176,12 @@ export function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                minLength={8}
+                maxLength={100}
                 disabled={loading}
+                autoComplete="new-password"
               />
+              <p className="text-xs text-slate-500">Mínimo 8 caracteres</p>
             </div>
 
             {error ? (
@@ -137,18 +191,14 @@ export function LoginForm() {
             ) : null}
 
             <Button type="submit" loading={loading} className="w-full" size="lg">
-              Entrar
+              Crear cuenta
             </Button>
 
             <p className="text-center text-xs text-slate-500">
-              ¿No tenés cuenta?{' '}
-              <Link href="/registro" className="font-medium text-green-400 hover:text-green-300">
-                Crear cuenta
+              ¿Ya tenés cuenta?{' '}
+              <Link href="/login" className="font-medium text-green-400 hover:text-green-300">
+                Iniciar sesión
               </Link>
-            </p>
-
-            <p className="text-center text-xs text-slate-500">
-              Demo: <code className="font-mono">admin@credia.io</code> / <code className="font-mono">demo1234</code>
             </p>
           </form>
         </CardContent>
