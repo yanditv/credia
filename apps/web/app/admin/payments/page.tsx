@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { ErrorState } from '@/components/ui/error-state';
+import { SkeletonTable } from '@/components/ui/skeleton';
 import { PaymentsTable } from '@/components/loans/payments-table';
 import { useAuthStore } from '@/lib/auth-store';
 import { paymentsApi } from '@/lib/api/payments';
@@ -79,14 +81,15 @@ export default function PaymentsPage() {
       ) : null}
 
       {isLoading ? (
-        <div className="flex h-32 items-center justify-center text-sm text-slate-400">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <span className="ml-2">Cargando…</span>
-        </div>
+        <SkeletonTable cols={isAdmin ? 6 : 5} rows={4} />
       ) : error ? (
-        <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          Error al cargar pagos: {error instanceof Error ? error.message : 'desconocido'}
-        </div>
+        <ErrorState
+          title="Error al cargar pagos"
+          error={error}
+          onRetry={() =>
+            isAdmin ? allPaymentsQuery.refetch() : myPaymentsQuery.refetch()
+          }
+        />
       ) : (
         <PaymentsTable rows={rows} showUserColumn={isAdmin} />
       )}
