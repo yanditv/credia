@@ -6,6 +6,16 @@ declare_id!("DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o");
 // Reemplazar por multisig o governance antes de producción.
 pub const ADMIN_PUBKEY: Pubkey = pubkey!("HwCUQk4QKvDweRpmDZdEc4tLVDnUm6ZkBHQ2ZXxWmN7C");
 
+#[error_code]
+pub enum CrediaError {
+    #[msg("El prestamo no esta activo")]
+    LoanNotActive,
+    #[msg("El prestamo ya fue pagado")]
+    AlreadyPaid,
+    #[msg("La wallet firmante no coincide con el admin autorizado")]
+    InvalidAdmin,
+}
+
 #[program]
 pub mod credia_reputation {
     use super::*;
@@ -100,7 +110,7 @@ pub struct UpdateScoreHash<'info> {
         bump = user_reputation.bump,
     )]
     pub user_reputation: Account<'info, UserReputation>,
-    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    #[account(constraint = admin.key() == ADMIN_PUBKEY @ CrediaError::InvalidAdmin)]
     pub admin: Signer<'info>,
 }
 
@@ -118,7 +128,7 @@ pub struct CreateLoanRecord<'info> {
     )]
     pub loan_record: Account<'info, LoanRecord>,
     #[account(mut)]
-    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    #[account(constraint = admin.key() == ADMIN_PUBKEY @ CrediaError::InvalidAdmin)]
     pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
@@ -154,7 +164,7 @@ pub struct CloseLoan<'info> {
         bump = loan_record.bump,
     )]
     pub loan_record: Account<'info, LoanRecord>,
-    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    #[account(constraint = admin.key() == ADMIN_PUBKEY @ CrediaError::InvalidAdmin)]
     pub admin: Signer<'info>,
 }
 
@@ -168,7 +178,7 @@ pub struct MarkDefault<'info> {
         bump = loan_record.bump,
     )]
     pub loan_record: Account<'info, LoanRecord>,
-    #[account(constraint = admin.key() == ADMIN_PUBKEY)]
+    #[account(constraint = admin.key() == ADMIN_PUBKEY @ CrediaError::InvalidAdmin)]
     pub admin: Signer<'info>,
 }
 
