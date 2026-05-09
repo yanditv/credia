@@ -1,0 +1,28 @@
+import { address } from '@solana/kit';
+
+export const CREDIA_REPUTATION_PROGRAM_ADDRESS = address(
+  'DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o',
+);
+
+export const CREDIA_REPUTATION_ADMIN_ADDRESS = address(
+  'HwCUQk4QKvDweRpmDZdEc4tLVDnUm6ZkBHQ2ZXxWmN7C',
+);
+
+export const CREDIA_REPUTATION_DISCRIMINATOR__INIT_REPUTATION = new Uint8Array([
+  236, 239, 233, 112, 220, 149, 26, 175,
+]);
+export const CREDIA_REPUTATION_DISCRIMINATOR__UPDATE_SCORE_HASH = new Uint8Array([
+  245, 184, 142, 228, 201, 47, 148, 170,
+]);
+export const CREDIA_REPUTATION_DISCRIMINATOR__CREATE_LOAN_RECORD = new Uint8Array([
+  79, 46, 198, 203, 2, 203, 76, 51,
+]);
+export const CREDIA_REPUTATION_DISCRIMINATOR__REGISTER_PAYMENT = new Uint8Array([
+  217, 221, 73, 251, 248, 92, 214, 33,
+]);
+export const CREDIA_REPUTATION_DISCRIMINATOR__CLOSE_LOAN = new Uint8Array([
+  96, 114, 111, 204, 149, 228, 235, 124,
+]);
+export const CREDIA_REPUTATION_DISCRIMINATOR__MARK_DEFAULT = new Uint8Array([
+  182, 231, 123, 132, 66, 208, 137, 139,
+]);
