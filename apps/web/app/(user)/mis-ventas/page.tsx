@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ErrorState } from '@/components/ui/error-state';
 import { SkeletonCard } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { FileUpload } from '@/components/ui/file-upload';
 import { incomeRecordsApi } from '@/lib/api/income-records';
 import { ApiError } from '@/lib/api';
 import { formatUsdc, formatDate } from '@/lib/format';
@@ -49,6 +50,8 @@ export default function MisVentasPage() {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [recordDate, setRecordDate] = useState(todayIso());
+  const [evidenceUrl, setEvidenceUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const mutation = useMutation({
     mutationFn: incomeRecordsApi.create,
@@ -58,6 +61,8 @@ export default function MisVentasPage() {
       setAmount('');
       setDescription('');
       setRecordDate(todayIso());
+      setEvidenceUrl(null);
+      setIsUploading(false);
       setShowForm(false);
     },
     onError: (err) => {
@@ -68,10 +73,15 @@ export default function MisVentasPage() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (isUploading) {
+      toast.message('Esperá a que el comprobante termine de subir');
+      return;
+    }
     mutation.mutate({
       sourceType,
       amount,
       description: description.trim() || undefined,
+      evidenceUrl: evidenceUrl ?? undefined,
       recordDate: new Date(recordDate).toISOString(),
     });
   }
@@ -178,12 +188,28 @@ export default function MisVentasPage() {
                 />
               </div>
 
-              <div className="md:col-span-2">
-                <p className="mb-3 text-xs text-slate-500">
-                  Próximamente vas a poder subir fotos de comprobantes para verificar tus ventas. Mientras tanto, registralas y luego subís el comprobante cuando esté listo.
+              <div className="md:col-span-2 space-y-2">
+                <Label>Comprobante (opcional)</Label>
+                <p className="text-xs text-slate-500">
+                  Subir un comprobante mejora tu score (componente _documentación verificada_, 10%)
                 </p>
-                <Button type="submit" loading={mutation.isPending} className="w-full" size="lg">
-                  Registrar venta
+                <FileUpload
+                  value={evidenceUrl}
+                  onUploaded={setEvidenceUrl}
+                  onClear={() => setEvidenceUrl(null)}
+                  onUploadingChange={setIsUploading}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Button
+                  type="submit"
+                  loading={mutation.isPending || isUploading}
+                  disabled={isUploading}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isUploading ? 'Esperando comprobante…' : 'Registrar venta'}
                 </Button>
               </div>
             </form>
