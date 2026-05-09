@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreBreakdownDto, ScoreResult, getRiskLevel, getMaxAmountByScore } from './dto/score-breakdown.dto';
 import { RiskLevel, SourceType } from '@prisma/client';
@@ -20,6 +20,13 @@ export class ScoresService {
         select: { status: true },
       }),
     ]);
+
+    if (incomeRecords.length < 3) {
+      throw new HttpException(
+        'Necesitas al menos 3 registros de ingresos para calcular tu score',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const breakdown = this.calculateBreakdown(incomeRecords, businessProfile, previousLoans);
     const score = this.computeFinalScore(breakdown);
@@ -52,11 +59,33 @@ export class ScoresService {
     });
   }
 
-  async getLatest(userId: string) {
-    return this.prisma.creditScore.findFirst({
+  async getByUserId(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    return this.prisma.creditScore.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async getLatest(userId: string) {
+    const score = await this.prisma.creditScore.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!score) {
+      throw new HttpException('No se encontró score para este usuario', HttpStatus.NOT_FOUND);
+    }
+
+    return score;
   }
 
   private calculateBreakdown(
@@ -158,7 +187,7 @@ export class ScoresService {
   }
 
   private generateScoreHash(userId: string, score: number, breakdown: ScoreBreakdownDto): string {
-    const data = `${userId}:${score}:${JSON.stringify(breakdown)}:${Date.now()}`;
+    const data = `${userId}:${score}:${JSON.stringify(breakdown)}`;
     return createHash('sha256').update(data).digest('hex');
   }
 }

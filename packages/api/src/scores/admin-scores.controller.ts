@@ -16,6 +16,6 @@ export class AdminScoresController {
   @ApiResponse({ status: 200, description: 'Lista de scores del usuario' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   getByUser(@Param('userId') userId: string) {
-    return this.service.listMine(userId);
+    return this.service.getByUserId(userId);
   }
 }
