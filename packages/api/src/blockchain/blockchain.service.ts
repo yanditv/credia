@@ -48,6 +48,17 @@ export interface DisburseUsdcInput {
   amount: string;
 }
 
+export class UsdcDisbursementError extends Error {
+  constructor(
+    message: string,
+    readonly signature?: string,
+    readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = 'UsdcDisbursementError';
+  }
+}
+
 @Injectable()
 export class BlockchainService {
   private clientPromise?: Promise<Awaited<ReturnType<BlockchainService['createClientForSigner']>>>;
@@ -171,17 +182,25 @@ export class BlockchainService {
     const adminSigner = await this.getAdminSigner();
     const client = await this.createClientForSigner(adminSigner);
 
-    const signature = await client.token.instructions
-      .transferToATA({
-        mint: address(this.getUsdcMintAddress()),
-        authority: adminSigner,
-        recipient: address(input.recipientWallet),
-        amount: this.decimalAmountToBaseUnits(input.amount, this.getUsdcDecimals()),
-        decimals: this.getUsdcDecimals(),
-      })
-      .sendTransaction();
+    try {
+      const signature = await client.token.instructions
+        .transferToATA({
+          mint: address(this.getUsdcMintAddress()),
+          authority: adminSigner,
+          recipient: address(input.recipientWallet),
+          amount: this.decimalAmountToBaseUnits(input.amount, this.getUsdcDecimals()),
+          decimals: this.getUsdcDecimals(),
+        })
+        .sendTransaction();
 
-    return { signature };
+      return { signature };
+    } catch (error: unknown) {
+      throw new UsdcDisbursementError(
+        'No se pudo confirmar el desembolso USDC',
+        this.extractSignatureFromError(error),
+        error,
+      );
+    }
   }
 
   private async getAdminClient() {
@@ -232,6 +251,31 @@ export class BlockchainService {
 
     const normalized = `${whole}${fraction.padEnd(decimals, '0')}`.replace(/^0+(?=\d)/, '');
     return BigInt(normalized || '0');
+  }
+
+  private extractSignatureFromError(error: unknown): string | undefined {
+    if (typeof error !== 'object' || error === null) {
+      return undefined;
+    }
+
+    const candidate = error as {
+      signature?: unknown;
+      transactionSignature?: unknown;
+      cause?: unknown;
+    };
+
+    if (typeof candidate.signature === 'string' && candidate.signature.length > 0) {
+      return candidate.signature;
+    }
+
+    if (
+      typeof candidate.transactionSignature === 'string' &&
+      candidate.transactionSignature.length > 0
+    ) {
+      return candidate.transactionSignature;
+    }
+
+    return this.extractSignatureFromError(candidate.cause);
   }
 
   private hexToBytes32(value: string) {

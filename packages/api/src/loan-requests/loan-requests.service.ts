@@ -1,10 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLoanRequestDto } from './dto/create-loan-request.dto';
 import { RejectLoanRequestDto } from './dto/reject-loan-request.dto';
 import { getMaxAmountByScore, MIN_SCORE_FOR_LOAN } from './helpers/score-cupos';
 import { calculateLoanAmounts } from '../loans/helpers/interest-calc';
-import { BlockchainService } from '../blockchain/blockchain.service';
+import { BlockchainService, UsdcDisbursementError } from '../blockchain/blockchain.service';
 import { LoanRequestStatus, LoanStatus, Prisma } from '@prisma/client';
 import { createHash } from 'crypto';
 
@@ -12,6 +12,8 @@ import { createHash } from 'crypto';
 
 @Injectable()
 export class LoanRequestsService {
+  private readonly logger = new Logger(LoanRequestsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly blockchainService: BlockchainService,
@@ -154,7 +156,29 @@ export class LoanRequestsService {
         });
 
         finalLoan = { ...finalLoan, blockchainTx: String(result.signature) };
-      } catch {
+      } catch (error: unknown) {
+        const signature = error instanceof UsdcDisbursementError ? error.signature : undefined;
+
+        this.logger.error('USDC disbursement failed', {
+          loanId: loan.id,
+          requestId: request.id,
+          walletAddress: user.walletAddress,
+          signature,
+          error,
+        });
+
+        if (signature) {
+          await this.prisma.loan.update({
+            where: { id: loan.id },
+            data: { blockchainTx: signature },
+          });
+
+          throw new HttpException(
+            'La transferencia USDC fue enviada pero no se pudo confirmar automáticamente; revisa la tx en Solana Explorer antes de reintentar',
+            HttpStatus.BAD_GATEWAY,
+          );
+        }
+
         await this.prisma.$transaction([
           this.prisma.loan.delete({ where: { id: loan.id } }),
           this.prisma.loanRequest.update({
@@ -187,6 +211,8 @@ export class LoanRequestsService {
         await this.prisma.loan.update({
           where: { id: loan.id },
           data: {
+            // Si hubo desembolso USDC, conservamos esa signature y guardamos
+            // aparte el PDA del LoanRecord para no sobreescribir la tx del transfer.
             ...(shouldDisburseUsdc ? {} : { blockchainTx: String(result.signature) }),
             blockchainLoanRecord: result.loanRecord.toString(),
           },
