@@ -6,9 +6,13 @@ import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
-import { NAV_ITEMS } from './nav-items';
+import { NAV_ITEMS, type NavItem } from './nav-items';
 
-export function Sidebar() {
+interface SidebarProps {
+  items?: NavItem[];
+}
+
+export function Sidebar({ items = NAV_ITEMS }: SidebarProps) {
   const pathname = usePathname();
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const closeSidebar = useUiStore((s) => s.closeSidebar);
@@ -66,7 +70,7 @@ export function Sidebar() {
 
         {/* Nav */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {NAV_ITEMS.map((item) => {
+          {items.map((item) => {
             const isActive = pathname.startsWith(item.href);
             const Icon = item.icon;
 

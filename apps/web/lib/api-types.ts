@@ -18,6 +18,57 @@ export type BusinessType =
   | 'SERVICES'
   | 'AGRICULTURE'
   | 'OTHER';
+export type SourceType =
+  | 'DAILY_SALES'
+  | 'INVOICE'
+  | 'QR_PAYMENT'
+  | 'DELIVERY'
+  | 'REFERENCE'
+  | 'OTHER';
+
+export interface IncomeRecord {
+  id: string;
+  userId: string;
+  sourceType: SourceType;
+  amount: string;
+  description: string | null;
+  evidenceUrl: string | null;
+  recordDate: string;
+  createdAt: string;
+}
+
+export interface IncomeSummary {
+  totalRecords: number;
+  totalAmount: number;
+  averageAmount: number;
+  bySourceType: { sourceType: SourceType; count: number; total: number }[];
+  last30Days: { count: number; total: number };
+  last7Days: { count: number; total: number };
+}
+
+export interface CreditScore {
+  id: string;
+  userId: string;
+  score: number;
+  riskLevel: RiskLevel;
+  maxCreditAmount: string;
+  scoreHash: string;
+  breakdown: Record<string, number>;
+  blockchainTx: string | null;
+  createdAt: string;
+}
+
+export interface UserMe {
+  id: string;
+  fullName: string;
+  documentNumber: string;
+  phone: string;
+  email: string;
+  walletAddress: string | null;
+  role: Role;
+  status: UserStatus;
+  createdAt: string;
+}
 
 export interface AdminUserSummary {
   id: string;

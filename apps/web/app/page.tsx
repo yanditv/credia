@@ -4,14 +4,24 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 
-// Redirige a /admin/dashboard si hay sesión, /login si no.
+// Redirige según rol:
+// - sin sesión → /login
+// - role USER → /mi-perfil
+// - role ADMIN o RISK_ANALYST → /admin/dashboard
 export default function HomePage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const role = useAuthStore((s) => s.user?.role);
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   useEffect(() => {
-    router.replace(accessToken ? '/admin/dashboard' : '/login');
-  }, [accessToken, router]);
+    if (!_hasHydrated) return;
+    if (!accessToken) {
+      router.replace('/login');
+      return;
+    }
+    router.replace(role === 'USER' ? '/mi-perfil' : '/admin/dashboard');
+  }, [_hasHydrated, accessToken, role, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
