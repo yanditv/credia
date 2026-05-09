@@ -38,10 +38,23 @@ Este paquete contiene el programa Anchor de Solana para el módulo de reputació
 
 5. Desplegar en devnet:
    ```bash
-   anchor deploy
+   anchor deploy --provider.cluster devnet
    ```
 
-6. Actualizar el `Program ID` en `packages/blockchain/programs/credia_reputation/src/lib.rs` y en `packages/blockchain/Anchor.toml` después del deploy.
+6. Program ID actual en devnet:
+   ```text
+   DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o
+   ```
+
+7. Verificar en Solana Explorer:
+   ```text
+   https://explorer.solana.com/address/DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o?cluster=devnet
+   ```
+
+8. La firma del deploy más reciente fue:
+   ```text
+   Xzw34GMsjAY2p7feDfMvz7yPksuw2dH5aYACBrGxisAVZu6t8tCo1UGCjSqrTWP3y7Fv8GZubQk98pSfbHhB3mt
+   ```
 
 ## Estructura creada
 
