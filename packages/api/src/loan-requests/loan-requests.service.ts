@@ -4,7 +4,7 @@ import { CreateLoanRequestDto } from './dto/create-loan-request.dto';
 import { RejectLoanRequestDto } from './dto/reject-loan-request.dto';
 import { getMaxAmountByScore, MIN_SCORE_FOR_LOAN } from './helpers/score-cupos';
 import { calculateLoanAmounts } from '../loans/helpers/interest-calc';
-import { LoanRequestStatus, LoanStatus } from '@prisma/client';
+import { LoanRequestStatus, LoanStatus, Prisma } from '@prisma/client';
 
 // Errores de Prisma se mapean centralmente vía PrismaClientExceptionFilter.
 
@@ -76,7 +76,7 @@ export class LoanRequestsService {
   }
 
   async approve(id: string) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const request = await tx.loanRequest.findUnique({ where: { id } });
       if (!request) {
         throw new HttpException('Solicitud no encontrada', HttpStatus.NOT_FOUND);
