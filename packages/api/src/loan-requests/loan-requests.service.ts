@@ -81,7 +81,7 @@ export class LoanRequestsService {
   }
 
   async approve(id: string) {
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const { request, loan } = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const request = await tx.loanRequest.findUnique({ where: { id } });
       if (!request) {
         throw new HttpException('Solicitud no encontrada', HttpStatus.NOT_FOUND);
@@ -92,11 +92,6 @@ export class LoanRequestsService {
           HttpStatus.CONFLICT,
         );
       }
-
-      const user = await tx.user.findUnique({
-        where: { id: request.userId },
-        select: { walletAddress: true },
-      });
 
       const principal = Number(request.requestedAmount);
       const amounts = calculateLoanAmounts(principal, request.termDays);
@@ -112,36 +107,45 @@ export class LoanRequestsService {
         },
       });
 
-      if (user?.walletAddress) {
-        const loanIdHash = createHash('sha256').update(loan.id).digest('hex');
-        const amountHash = createHash('sha256').update(amounts.principal.toFixed(2)).digest('hex');
-
-        try {
-          const result = await this.blockchainService.registerLoan({
-            targetWallet: user.walletAddress,
-            loanIdHashHex: loanIdHash,
-            amountHashHex: amountHash,
-          });
-
-          await tx.loan.update({
-            where: { id: loan.id },
-            data: {
-              blockchainTx: String(result.signature),
-              blockchainLoanRecord: result.loanRecord.toString(),
-            },
-          });
-        } catch {
-          // Soft fail: el crédito se aprueba igual, blockchainTx queda null
-        }
-      }
-
       await tx.loanRequest.update({
         where: { id },
         data: { status: LoanRequestStatus.APPROVED },
       });
 
-      return { loanRequest: { ...request, status: LoanRequestStatus.APPROVED }, loan };
+      return { request, loan };
     });
+
+    // Blockchain hook fuera de la transacción Prisma para evitar
+    // mantener la conexión abierta durante el RPC a Solana.
+    const user = await this.prisma.user.findUnique({
+      where: { id: request.userId },
+      select: { walletAddress: true },
+    });
+
+    if (user?.walletAddress) {
+      const loanIdHash = createHash('sha256').update(loan.id).digest('hex');
+      const amountHash = createHash('sha256').update(loan.principalAmount.toString()).digest('hex');
+
+      try {
+        const result = await this.blockchainService.registerLoan({
+          targetWallet: user.walletAddress,
+          loanIdHashHex: loanIdHash,
+          amountHashHex: amountHash,
+        });
+
+        await this.prisma.loan.update({
+          where: { id: loan.id },
+          data: {
+            blockchainTx: String(result.signature),
+            blockchainLoanRecord: result.loanRecord.toString(),
+          },
+        });
+      } catch {
+        // Soft fail: el crédito se aprueba igual, blockchainTx queda null
+      }
+    }
+
+    return { loanRequest: { ...request, status: LoanRequestStatus.APPROVED }, loan };
   }
 
   async reject(id: string, _dto: RejectLoanRequestDto) {
