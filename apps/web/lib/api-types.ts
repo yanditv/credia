@@ -133,3 +133,23 @@ export interface ApproveResult {
   loanRequest: LoanRequest;
   loan: Loan;
 }
+
+export interface AuditLogEntry {
+  id: string;
+  userId: string | null;
+  action: string;
+  resource: string;
+  resourceId: string | null;
+  url: string | null;
+  metadata: Record<string, unknown> | null;
+  ip: string | null;
+  createdAt: string;
+}
+
+export interface PaginatedAuditResponse {
+  data: AuditLogEntry[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
