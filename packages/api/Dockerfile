@@ -5,6 +5,7 @@ COPY package*.json ./
 COPY packages/api/package.json packages/api/package.json
 COPY packages/blockchain/package.json packages/blockchain/package.json
 COPY packages/blockchain/tsconfig.json packages/blockchain/tsconfig.json
+COPY tsconfig.base.json ./tsconfig.base.json
 RUN npm ci --ignore-scripts
 
 COPY packages/api/prisma packages/api/prisma
