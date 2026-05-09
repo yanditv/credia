@@ -12,6 +12,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { IncomeRecordsModule } from './income-records/income-records.module';
 import { ScoresModule } from './scores/scores.module';
 import { DashboardMetricsModule } from './dashboard-metrics/dashboard-metrics.module';
+import { BlockchainModule } from './blockchain/blockchain.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { DashboardMetricsModule } from './dashboard-metrics/dashboard-metrics.mo
     IncomeRecordsModule,
     ScoresModule,
     DashboardMetricsModule,
+    BlockchainModule,
   ],
   providers: [
     {

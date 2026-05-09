@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./clients/ts/credia-reputation": "./clients/ts/credia-reputation/index.ts"
+  },
   "scripts": {
     "build:client": "tsc -p tsconfig.json --noEmit"
   },
