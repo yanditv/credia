@@ -13,6 +13,7 @@ import { IncomeRecordsModule } from './income-records/income-records.module';
 import { ScoresModule } from './scores/scores.module';
 import { DashboardMetricsModule } from './dashboard-metrics/dashboard-metrics.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { BlockchainModule } from './blockchain/blockchain.module';
     ScoresModule,
     DashboardMetricsModule,
     BlockchainModule,
+    AuditModule,
   ],
   providers: [
     {
