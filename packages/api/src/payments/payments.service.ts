@@ -1,7 +1,9 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { BlockchainService } from '../blockchain/blockchain.service';
 import { LoanStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { createHash } from 'crypto';
 
 // CASH/TRANSFER quedan COMPLETED inmediato (admin confía en el reporte).
 // USDC_ON_CHAIN queda PENDING hasta que el módulo blockchain (Día 3) confirme
@@ -9,7 +11,10 @@ import { LoanStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly blockchainService: BlockchainService,
+  ) {}
 
   async create(loanId: string, requestingUserId: string, isAdmin: boolean, dto: CreatePaymentDto) {
     const loan = await this.prisma.loan.findUnique({ where: { id: loanId } });
@@ -35,7 +40,7 @@ export class PaymentsService {
     const status = isOnChain ? PaymentStatus.PENDING : PaymentStatus.COMPLETED;
     const paidAt = isOnChain ? null : new Date();
 
-    return this.prisma.loanPayment.create({
+    const payment = await this.prisma.loanPayment.create({
       data: {
         loanId,
         amount: dto.amount,
@@ -45,6 +50,28 @@ export class PaymentsService {
         paidAt,
       },
     });
+
+    if (loan.blockchainLoanRecord) {
+      const paymentHash = createHash('sha256').update(payment.id).digest('hex');
+      const amountHash = createHash('sha256').update(dto.amount).digest('hex');
+
+      try {
+        const result = await this.blockchainService.registerPayment({
+          loanRecord: loan.blockchainLoanRecord,
+          paymentHashHex: paymentHash,
+          amountHashHex: amountHash,
+        });
+
+        await this.prisma.loanPayment.update({
+          where: { id: payment.id },
+          data: { blockchainTx: String(result.signature) },
+        });
+      } catch {
+        // Soft fail: el pago queda registrado igual, blockchainTx queda null
+      }
+    }
+
+    return payment;
   }
 
   async listForLoan(loanId: string, requestingUserId: string, isAdmin: boolean) {
