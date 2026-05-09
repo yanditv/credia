@@ -14,6 +14,7 @@ import { ScoresModule } from './scores/scores.module';
 import { DashboardMetricsModule } from './dashboard-metrics/dashboard-metrics.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
 import { AuditModule } from './audit/audit.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuditModule } from './audit/audit.module';
     DashboardMetricsModule,
     BlockchainModule,
     AuditModule,
+    UploadModule,
   ],
   providers: [
     {
