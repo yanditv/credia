@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { address, createClient } from '@solana/kit';
-import { solanaRpc } from '@solana/kit-plugin-rpc';
+import { solanaDevnetRpc, solanaRpc } from '@solana/kit-plugin-rpc';
 import { signer } from '@solana/kit-plugin-signer';
 import { tokenProgram } from '@solana-program/token';
 import { createKeyPairSignerFromBytes } from '@solana/signers';
@@ -180,7 +180,7 @@ export class BlockchainService {
 
   async disburseUsdc(input: DisburseUsdcInput) {
     const adminSigner = await this.getAdminSigner();
-    const client = await this.createClientForSigner(adminSigner);
+    const client = await this.createTokenClientForSigner(adminSigner);
 
     try {
       const signature = await client.token.instructions
@@ -221,6 +221,10 @@ export class BlockchainService {
   }
 
   private async createClientForSigner(existingSigner: KeyPairSigner) {
+    return await createClient().use(signer(existingSigner)).use(solanaDevnetRpc());
+  }
+
+  private async createTokenClientForSigner(existingSigner: KeyPairSigner) {
     return await createClient()
       .use(signer(existingSigner))
       .use(solanaRpc({ rpcUrl: this.getRpcUrl() }))
