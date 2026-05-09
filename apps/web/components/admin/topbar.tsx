@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { LogOut, User as UserIcon } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { Button } from '@/components/ui/button';
+import { WalletButton } from '@/components/wallet/wallet-button';
 
 export function Topbar() {
   const router = useRouter();
@@ -22,6 +23,8 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-3">
+        <WalletButton />
+
         <div className="flex items-center gap-2 rounded-lg bg-slate-800/60 px-3 py-1.5 text-sm">
           <UserIcon className="h-4 w-4 text-slate-400" />
           <span className="text-slate-200">{user?.email ?? '—'}</span>
