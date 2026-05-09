@@ -1,31 +1,23 @@
-# ---- Base ----
-FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+FROM node:22-alpine AS builder
 WORKDIR /app
 
-# ---- Builder ----
-FROM base AS builder
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-COPY prisma/ ./prisma/
-RUN pnpm --filter @credia/api prisma generate
-COPY . .
-RUN pnpm --filter @credia/api build
+COPY package*.json ./
+COPY packages/api/package.json packages/api/package.json
+COPY packages/blockchain/package.json packages/blockchain/package.json
+RUN npm ci --ignore-scripts
 
-# ---- Prod deps ----
-FROM base AS prod-deps
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
+COPY packages/api/prisma packages/api/prisma
+RUN npx prisma generate --schema packages/api/prisma/schema.prisma
 
-# ---- Runner ----
+COPY packages/api packages/api
+COPY packages/blockchain packages/blockchain
+RUN npm run build -w @credia/api
+
 FROM node:22-alpine AS runner
-RUN addgroup -S credia && adduser -S credia -G credia
 WORKDIR /app
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/package.json ./package.json
-COPY prisma/ ./prisma/
-USER credia
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/api/dist packages/api/dist
+COPY --from=builder /app/packages/api/package.json packages/api/package.json
+COPY packages/api/prisma packages/api/prisma
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+CMD ["node", "packages/api/dist/main.js"]

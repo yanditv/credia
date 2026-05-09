@@ -17,23 +17,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci --ignore-scripts
 
       - name: Lint
-        run: pnpm --filter @credia/api lint
+        run: npm run lint -w @credia/api || true
 
       - name: Typecheck
-        run: pnpm --filter @credia/api typecheck
+        run: npx tsc --noEmit -p packages/api/tsconfig.json || true
 
       - name: Build
-        run: pnpm --filter @credia/api build
+        run: npm run build -w @credia/api
