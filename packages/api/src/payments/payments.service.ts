@@ -60,4 +60,42 @@ export class PaymentsService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async listAllAdmin(filters: { status?: PaymentStatus; method?: PaymentMethod }) {
+    return this.prisma.loanPayment.findMany({
+      where: {
+        ...(filters.status ? { status: filters.status } : {}),
+        ...(filters.method ? { paymentMethod: filters.method } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        loan: {
+          select: {
+            id: true,
+            principalAmount: true,
+            totalAmount: true,
+            status: true,
+            user: { select: { id: true, fullName: true, email: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async listMineAcrossLoans(userId: string) {
+    return this.prisma.loanPayment.findMany({
+      where: { loan: { userId } },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        loan: {
+          select: {
+            id: true,
+            principalAmount: true,
+            totalAmount: true,
+            status: true,
+          },
+        },
+      },
+    });
+  }
 }
