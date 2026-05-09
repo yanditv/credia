@@ -10,28 +10,9 @@ import { ConnectWalletDto } from './dto/connect-wallet.dto';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
-    }
-    return user;
-  }
-
-  async updateProfile(id: string, dto: UpdateUserDto) {
-    await this.findById(id);
-    return this.prisma.user.update({ where: { id }, data: dto });
-  }
-
-  async connectWallet(id: string, dto: ConnectWalletDto) {
-    await this.findById(id);
-    return this.prisma.user.update({
-      where: { id },
-      data: { walletAddress: dto.walletAddress },
-    });
-  }
-
-  // Selects que excluyen passwordHash. Crítico para no leakear hashes vía /admin/users.
+  // Selects que excluyen passwordHash. Crítico para no leakear hashes vía
+  // ningún endpoint que retorne el User (ni propio ni admin). AuthService
+  // usa findByEmail que sí incluye passwordHash para verificación de login.
   private readonly USER_SAFE_SELECT = {
     id: true,
     fullName: true,
@@ -43,6 +24,35 @@ export class UsersService {
     status: true,
     createdAt: true,
   } as const;
+
+  async findById(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: this.USER_SAFE_SELECT,
+    });
+    if (!user) {
+      throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
+    }
+    return user;
+  }
+
+  async updateProfile(id: string, dto: UpdateUserDto) {
+    await this.findById(id);
+    return this.prisma.user.update({
+      where: { id },
+      data: dto,
+      select: this.USER_SAFE_SELECT,
+    });
+  }
+
+  async connectWallet(id: string, dto: ConnectWalletDto) {
+    await this.findById(id);
+    return this.prisma.user.update({
+      where: { id },
+      data: { walletAddress: dto.walletAddress },
+      select: this.USER_SAFE_SELECT,
+    });
+  }
 
   async listAllAdmin() {
     return this.prisma.user.findMany({
