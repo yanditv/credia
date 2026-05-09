@@ -11,6 +11,12 @@ import type { Wallet, WalletAccount } from '@wallet-standard/base';
 export const SOLANA_DEVNET_CHAIN = 'solana:devnet';
 export const SOLANA_MAINNET_CHAIN = 'solana:mainnet';
 
+// Allowlist alineada con CLAUDE.md (sección Wallets): solo Phantom y Solflare
+// son wallets soportadas por el proyecto. Brave/MetaMask/etc. también
+// implementan Wallet Standard pero los filtramos para que el modal sea
+// consistente con la documentación y los flujos validados.
+const SUPPORTED_WALLET_NAMES = new Set(['Phantom', 'Solflare']);
+
 export interface DetectedWallet {
   name: string;
   icon: string;
@@ -27,11 +33,16 @@ function supportsSolana(wallet: Wallet): boolean {
   return wallet.chains.some((c) => c.startsWith('solana:'));
 }
 
+function isSupported(wallet: Wallet): boolean {
+  return SUPPORTED_WALLET_NAMES.has(wallet.name);
+}
+
 export function listSolanaWallets(): DetectedWallet[] {
   if (typeof window === 'undefined') return [];
   return getWallets()
     .get()
     .filter(supportsSolana)
+    .filter(isSupported)
     .map((wallet) => ({
       name: wallet.name,
       icon: wallet.icon,
