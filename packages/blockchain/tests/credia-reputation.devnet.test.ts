@@ -5,8 +5,13 @@ import { createHash } from 'node:crypto';
 import { AnchorProvider, Program, Wallet, web3 } from '@coral-xyz/anchor';
 
 const { Keypair, Connection, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } = web3;
-const ADMIN_KEYPAIR_PATH = process.env.ADMIN_KEYPAIR_PATH ?? '/Users/famitry/.config/solana/id.json';
+const ADMIN_KEYPAIR_PATH = process.env.ADMIN_KEYPAIR_PATH;
+if (!ADMIN_KEYPAIR_PATH) {
+  throw new Error('ADMIN_KEYPAIR_PATH env var is required (e.g., export ADMIN_KEYPAIR_PATH=~/.config/solana/id.json)');
+}
 const TEST_PROGRAM_ID = process.env.CREDIA_TEST_PROGRAM_ID ?? 'DWaMz9AuWiQZ2VD4NrWNxMCC2AUkmZ8to4e5SrPEfBK6';
+// DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o es el programa oficial en CLAUDE.md.
+// DWaMz9AuWiQZ2VD4NrWNxMCC2AUkmZ8to4e5SrPEfBK6 es el deploy con cambios D3-D5 (error-codes, state-machine, payment-uniqueness).
 const IDL = {
   address: TEST_PROGRAM_ID,
   metadata: { name: 'credia_reputation', version: '0.1.0', spec: '0.1.0' },
