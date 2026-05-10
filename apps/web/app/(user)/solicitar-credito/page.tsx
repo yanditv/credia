@@ -11,12 +11,10 @@ import { LoanRequestForm } from '@/components/loans/loan-request-form';
 import { LoanRequestsTable } from '@/components/loans/loan-requests-table';
 import { loanRequestsApi } from '@/lib/api/loan-requests';
 import { scoresApi } from '@/lib/api/scores';
+import { usersApi } from '@/lib/api/users';
 import { formatUsdc } from '@/lib/format';
-import { useAuthStore } from '@/lib/auth-store';
 
 export default function SolicitarCreditoPage() {
-  const walletAddress = useAuthStore((s) => s.user?.walletAddress);
-
   const requestsQuery = useQuery({
     queryKey: ['loan-requests', 'me'],
     queryFn: () => loanRequestsApi.listMine(),
@@ -27,9 +25,17 @@ export default function SolicitarCreditoPage() {
     queryFn: () => scoresApi.getLatest(),
   });
 
+  // Source of truth para walletAddress: el server (auth-store solo guarda
+  // {id, email, role} desde el JWT y no se hidrata con walletAddress en login).
+  const meQuery = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: () => usersApi.getMe(),
+  });
+
   const maxAmount = scoreQuery.data?.maxCreditAmount;
-  const hasWallet = Boolean(walletAddress);
-  const canRequest = scoreQuery.data && scoreQuery.data.score >= 400 && hasWallet;
+  const hasWallet = Boolean(meQuery.data?.walletAddress);
+  const canRequest =
+    scoreQuery.data && scoreQuery.data.score >= 400 && hasWallet;
 
   return (
     <div className="space-y-6">
@@ -71,7 +77,7 @@ export default function SolicitarCreditoPage() {
             <LoanRequestForm />
           </CardContent>
         </Card>
-      ) : !scoreQuery.isLoading ? (
+      ) : !scoreQuery.isLoading && !meQuery.isLoading ? (
         <Card>
           <CardContent className="flex flex-col gap-3 p-6">
             {scoreQuery.data && scoreQuery.data.score < 400 ? (

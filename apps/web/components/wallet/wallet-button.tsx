@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, Copy, LogOut, Wallet as WalletIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import { truncateAddress, useWalletStore } from '@/lib/wallet/store';
 import { WalletModal } from './wallet-modal';
 
 export function WalletButton() {
+  const qc = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [connectingName, setConnectingName] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -54,6 +56,12 @@ export function WalletButton() {
         name: result.walletName,
       });
       setWalletAddress(result.address);
+      // Refresca el meQuery para que la UI que depende de
+      // /users/me (mi-perfil, solicitar-credito) vea la wallet vinculada
+      // sin necesidad de recargar la página.
+      qc.invalidateQueries({ queryKey: ['users', 'me'] });
+      // Y el balance de la wallet recién conectada (puede ya tener fondos).
+      qc.invalidateQueries({ queryKey: ['wallet-balance', 'me'] });
       setModalOpen(false);
 
       if (isReplacing) {
