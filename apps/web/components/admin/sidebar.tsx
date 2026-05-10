@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
+import { BrandLogo } from '@/components/brand-logo';
 import { NAV_ITEMS, type NavItem } from './nav-items';
 
 interface SidebarProps {
@@ -52,12 +53,7 @@ export function Sidebar({ items = NAV_ITEMS }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex h-16 items-center justify-between gap-2 border-b border-slate-800 px-6">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-400">
-              ●
-            </span>
-            <span className="text-lg font-bold tracking-tight text-slate-100">Credia</span>
-          </div>
+          <BrandLogo imageClassName="h-7" />
           <button
             type="button"
             onClick={closeSidebar}

@@ -39,7 +39,6 @@ const RADIUS = (SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const ARC_FRACTION = 0.75; // 270deg arc (3/4)
 const ARC_LENGTH = CIRCUMFERENCE * ARC_FRACTION;
-const ROTATION = 135; // start at lower-left, sweep clockwise to lower-right
 const ANIMATION_MS = 1100;
 
 interface ScoreGaugeProps {

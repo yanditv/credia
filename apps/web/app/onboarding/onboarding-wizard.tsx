@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { WalletButton } from '@/components/wallet/wallet-button';
+import { BrandLogo } from '@/components/brand-logo';
 import type { BusinessType } from '@/lib/api-types';
 
 type Step = 1 | 2 | 3;
@@ -115,6 +116,9 @@ export function OnboardingWizard() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 to-slate-900 p-4">
       <div className="w-full max-w-xl space-y-6">
+        <div className="flex justify-center">
+          <BrandLogo imageClassName="h-9" />
+        </div>
         <Stepper currentStep={step} />
 
         {step === 1 ? (
