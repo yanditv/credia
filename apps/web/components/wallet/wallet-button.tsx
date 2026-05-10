@@ -21,13 +21,20 @@ export function WalletButton() {
   const [copied, setCopied] = useState(false);
 
   const connectedWallet = useWalletStore((s) => s.connectedWallet);
-  const walletAddress = useWalletStore((s) => s.walletAddress);
+  const sessionAddress = useWalletStore((s) => s.walletAddress);
   const walletName = useWalletStore((s) => s.walletName);
   const setConnected = useWalletStore((s) => s.setConnected);
   const clear = useWalletStore((s) => s.clear);
 
   const setWalletAddress = useAuthStore((s) => s.setWalletAddress);
   const userWalletAddress = useAuthStore((s) => s.user?.walletAddress);
+
+  // El wallet store no se persiste (Wallet Standard requiere reauthorización
+  // por sesión), así que tras un reload sessionAddress es null pero el address
+  // ya está vinculado en BD via auth-store. Mostramos ese fallback para que el
+  // user no vea "Conectar wallet" cada vez que recarga.
+  const walletAddress = sessionAddress ?? userWalletAddress ?? null;
+  const isLiveSession = Boolean(sessionAddress);
 
   async function handleSelect(detected: DetectedWallet) {
     setConnectingName(detected.name);
@@ -86,12 +93,18 @@ export function WalletButton() {
   }
 
   if (walletAddress) {
+    const borderClass = isLiveSession
+      ? 'border-green-500/20 bg-green-500/5'
+      : 'border-slate-700 bg-slate-800/40';
+    const iconClass = isLiveSession ? 'text-green-400' : 'text-slate-400';
+    const textClass = isLiveSession ? 'text-green-100' : 'text-slate-200';
+
     return (
-      <div className="flex items-center gap-1 rounded-lg border border-green-500/20 bg-green-500/5 pl-3">
-        <WalletIcon className="h-4 w-4 text-green-400" />
+      <div className={`flex items-center gap-1 rounded-lg border pl-3 ${borderClass}`}>
+        <WalletIcon className={`h-4 w-4 ${iconClass}`} />
         <span
-          className="font-mono text-sm text-green-100"
-          title={`${walletName ?? 'Wallet'} · ${walletAddress}`}
+          className={`font-mono text-sm ${textClass}`}
+          title={`${walletName ?? 'Wallet vinculada'} · ${walletAddress}${isLiveSession ? '' : ' · sesión inactiva — reconectá para firmar'}`}
         >
           {truncateAddress(walletAddress)}
         </span>
@@ -103,6 +116,17 @@ export function WalletButton() {
         >
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
         </button>
+        {!isLiveSession ? (
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            aria-label="Reconectar wallet"
+            title="Reconectar para poder firmar transacciones"
+            className="inline-flex h-8 items-center px-2 text-xs text-slate-400 transition-colors hover:text-green-300"
+          >
+            Reconectar
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={handleDisconnect}
@@ -111,6 +135,12 @@ export function WalletButton() {
         >
           <LogOut className="h-3.5 w-3.5" />
         </button>
+        <WalletModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSelect={handleSelect}
+          connectingName={connectingName}
+        />
       </div>
     );
   }

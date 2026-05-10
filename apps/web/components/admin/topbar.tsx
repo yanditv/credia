@@ -33,7 +33,9 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <WalletButton />
+        {/* Solo USER necesita wallet (para recibir USDC + reputación on-chain).
+            ADMIN/RISK_ANALYST gestionan a través del backend con ADMIN_KEYPAIR. */}
+        {user?.role === 'USER' ? <WalletButton /> : null}
 
         <div className="hidden items-center gap-2 rounded-lg bg-slate-800/60 px-3 py-1.5 text-sm sm:flex">
           <UserIcon className="h-4 w-4 text-slate-400" />
