@@ -46,7 +46,12 @@ services:
       USDC_DISBURSEMENT_ENABLED: ${USDC_DISBURSEMENT_ENABLED:-false}
       SOLANA_USDC_MINT: ${SOLANA_USDC_MINT}
       SOLANA_USDC_DECIMALS: ${SOLANA_USDC_DECIMALS:-6}
+      # Endpoint INTERNO — la API habla con MinIO por la red docker.
       STORAGE_ENDPOINT: http://minio:9000
+      # URL PÚBLICA — la que se devuelve al navegador del usuario al subir un
+      # archivo. Coolify la sirve via Traefik (subdominio storage.credia.io)
+      # con SSL Let's Encrypt apuntando al puerto 9000 del servicio minio.
+      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL}
       STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
       STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       STORAGE_BUCKET: ${STORAGE_BUCKET:-credia-docs}
@@ -94,9 +99,11 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    ports:
-      - '${MINIO_API_PORT:-9000}:9000'
-      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    # Sin `ports:` para no publicar al host. MinIO se accede:
+    # - desde la API por la red docker interna (`http://minio:9000`)
+    # - desde el navegador por el subdominio storage.credia.io que Coolify
+    #   expone via ingress al puerto 9000 (ver infra/coolify/README.md).
+    # - la consola admin (9001) queda accesible solo via SSH tunnel.
     volumes:
       - minio_data:/data
     healthcheck:

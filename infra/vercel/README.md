@@ -21,7 +21,7 @@ Cloudflare DNS
 2. **Framework Preset:** Next.js (auto-detectado).
 3. **Root Directory:** `apps/web` (importante — es un monorepo).
 4. **Build Command:** `next build` (default).
-5. **Install Command:** `npm install --workspaces=false` (para que NO instale workspaces hermanos como `packages/api`, que tienen tooling pesado innecesario en el frontend).
+5. **Install Command:** dejar el default. Vercel detecta el `package-lock.json` de la raíz y respeta los workspaces; correr `npm install` sin flags mantiene el lockfile y reproducibilidad. (Anteriormente acá se sugirió `--workspaces=false` para evitar instalar `packages/api`; pero romper el lockfile causa drifts no reproducibles. Si el build se pone lento por instalar `packages/blockchain`, mejor ajustar `.vercelignore` o un workspace prune en el script de install.)
 6. **Output Directory:** `.next` (default).
 
 > Si el deploy falla con errores de workspaces, abrí **Project Settings → General → Root Directory** y confirmá `apps/web`. Vercel respeta ese scope.

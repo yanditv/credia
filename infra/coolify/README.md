@@ -47,20 +47,38 @@ En **Resource → Environment Variables**, pegá el contenido de `.env.productio
 - `JWT_SECRET` y `JWT_REFRESH_SECRET` — distintos entre sí, ≥32 chars cada uno.
 - `ADMIN_KEYPAIR` — JSON array de 64 numbers (`solana-keygen new --outfile admin.json && cat admin.json`).
 - `CORS_ORIGIN` — URL del frontend en Vercel (ver `infra/vercel/README.md`).
+- `STORAGE_PUBLIC_URL` — `https://storage.credia.io` (el dominio del paso 3.b). Si no lo seteás, los comprobantes suben pero las URLs rompen.
 
 > **Tip:** Coolify soporta secrets vs variables. Marcá los `*_SECRET`, `*_PASSWORD` y `ADMIN_KEYPAIR` como secret para que se enmascaren en logs/UI.
 
-### 3. Exponer solo el servicio `api` por dominio
+### 3. Exponer servicios por dominio
 
-En **Resource → Domains**:
+En **Resource → Domains**, agregá dos entradas (Coolify provee SSL Let's Encrypt automático en ambas):
+
+#### 3.a — API (siempre pública)
 
 - **Service:** `api`
 - **Port:** `3001`
 - **Domain:** `api.credia.io`
 
-Coolify se encarga del SSL via Let's Encrypt automáticamente.
+#### 3.b — MinIO API (necesaria para servir comprobantes)
 
-> Postgres / Redis / MinIO **no** exponen dominio público. Quedan en la red interna del stack. Si necesitás acceso temporal al MinIO console, abrí un túnel ssh: `ssh -L 9001:localhost:9001 vps`.
+- **Service:** `minio`
+- **Port:** `9000`
+- **Domain:** `storage.credia.io`
+
+> **Por qué necesitás este dominio:** la API guarda objetos en MinIO usando el endpoint interno `http://minio:9000`, pero la URL que devuelve al frontend tiene que ser **pública** para que el navegador del usuario pueda abrir el comprobante. La env `STORAGE_PUBLIC_URL=https://storage.credia.io` es lo que se serializa en `evidenceUrl`. Si no exponés este dominio, los archivos suben pero los links rompen.
+
+#### Consola admin de MinIO (puerto 9001)
+
+**No** la expongas públicamente — tiene credenciales de root. Para acceso ocasional, túnel ssh desde tu máquina:
+
+```bash
+ssh -L 9001:credia-minio:9001 user@vps
+# luego abrí http://localhost:9001 en el browser local
+```
+
+> Postgres / Redis quedan totalmente internos al stack docker. Sin dominio, sin port mapping al host.
 
 ### 4. Auto-deploy
 

@@ -31,8 +31,13 @@ export class UploadService implements OnModuleInit {
       'Content-Type': file.mimetype,
     });
 
-    const endpoint = this.config.get<string>('STORAGE_ENDPOINT');
-    const url = `${endpoint}/${this.bucket}/${key}`;
+    // STORAGE_PUBLIC_URL es lo que el navegador del usuario ve.
+    // STORAGE_ENDPOINT es solo para que la API hable con MinIO en la red docker.
+    // Si no está seteado, fallback a STORAGE_ENDPOINT (dev local: ambos = localhost:9000).
+    const publicBase =
+      this.config.get<string>('STORAGE_PUBLIC_URL') ??
+      this.config.getOrThrow<string>('STORAGE_ENDPOINT');
+    const url = `${publicBase.replace(/\/$/, '')}/${this.bucket}/${key}`;
 
     return { url, key, contentType: file.mimetype, size: file.size };
   }
