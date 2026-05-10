@@ -24,6 +24,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Credia — Microcréditos para trabajadores informales',
   description: 'Convierte tus ventas diarias en acceso a crédito',
+  icons: {
+    icon: '/credia-mark.svg',
+    shortcut: '/credia-mark.svg',
+    apple: '/credia-mark.svg',
+  },
 };
 
 export default function RootLayout({
