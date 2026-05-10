@@ -1,0 +1,7 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Credia</title>
+  <desc id="desc">Marca de Credia</desc>
+  <rect width="256" height="256" rx="56" fill="#020604"/>
+  <path d="M128 32C75.2 32 36 72.5 36 128C36 183.5 75.2 224 128 224C157.6 224 183.4 212.8 201 192.4L172.6 166.8C161.8 179.2 146.5 186 128 186C98.6 186 78 162.3 78 128C78 93.7 98.6 70 128 70C146.5 70 161.8 76.8 172.6 89.2L201 63.6C183.4 43.2 157.6 32 128 32Z" fill="#00D66F"/>
+  <path d="M130 104H206V142H130V104Z" fill="white"/>
+</svg>

@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { BrandLogo } from '@/components/brand-logo';
 
 interface LoginResponse {
   accessToken: string;
@@ -44,9 +45,9 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const setSession = useAuthStore((s) => s.setSession);
 
-  // `/` redirige role-aware: USER → /mi-perfil, ADMIN/RISK_ANALYST → /admin/dashboard.
   // Si el usuario llegó con ?redirect=... (deep link bloqueado por proxy) se respeta.
-  const redirectTo = searchParams.get('redirect') ?? '/';
+  // Sin redirect explícito, enviamos según rol porque `/` es la landing pública.
+  const redirectTo = searchParams.get('redirect');
 
   const [email, setEmail] = useState('admin@credia.io');
   const [password, setPassword] = useState('demo1234');
@@ -76,7 +77,7 @@ export function LoginForm() {
         refreshToken: res.refreshToken,
       });
 
-      router.push(redirectTo);
+      router.push(redirectTo ?? (payload.role === 'USER' ? '/mi-perfil' : '/admin/dashboard'));
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -94,12 +95,7 @@ export function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 to-slate-900 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <div className="mb-2 flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-400">
-              ●
-            </span>
-            <span className="text-lg font-bold tracking-tight text-slate-100">Credia</span>
-          </div>
+          <BrandLogo priority imageClassName="h-9" className="mb-2" />
           <CardTitle>Iniciar sesión</CardTitle>
           <CardDescription>
             Acceso al panel de administración

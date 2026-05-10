@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { BrandLogo } from '@/components/brand-logo';
 
 interface AuthResponse {
   accessToken: string;
@@ -92,12 +93,7 @@ export function SignupForm() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 to-slate-900 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <div className="mb-2 flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-400">
-              ●
-            </span>
-            <span className="text-lg font-bold tracking-tight text-slate-100">Credia</span>
-          </div>
+          <BrandLogo priority imageClassName="h-9" className="mb-2" />
           <CardTitle>Crear cuenta</CardTitle>
           <CardDescription>
             Convertí tus ventas diarias en acceso a crédito
