@@ -16,13 +16,13 @@ services:
       context: .
       dockerfile: packages/api/Dockerfile
     restart: unless-stopped
-    # Aplica migraciones pendientes y arranca la API. Las migraciones son
-    # idempotentes (prisma migrate deploy), así que correrlas en cada boot
-    # es seguro y mantiene el schema sincronizado tras cada deploy.
+    # Aplica migraciones pendientes (idempotente), seedea datos demo
+    # (idempotente vía upsert + skip si ya existe) y arranca la API.
+    # El && asegura que migraciones fallidas bloqueen el arranque.
     command:
       - sh
       - -c
-      - 'npx prisma migrate deploy --schema packages/api/prisma/schema.prisma && node packages/api/dist/main.js'
+      - 'npx prisma migrate deploy --schema packages/api/prisma/schema.prisma && npx ts-node packages/api/prisma/seed.ts && node packages/api/dist/main.js'
     depends_on:
       postgres:
         condition: service_healthy

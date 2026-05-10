@@ -59,54 +59,72 @@ async function main() {
     { amount: '22.00', sourceType: SourceType.DAILY_SALES, recordDate: new Date('2026-05-07') },
   ];
 
-  for (const record of incomeRecords) {
-    await prisma.incomeRecord.create({
+  const existingRecords = await prisma.incomeRecord.count({ where: { userId: demoUser.id } });
+  if (existingRecords === 0) {
+    for (const record of incomeRecords) {
+      await prisma.incomeRecord.create({
+        data: {
+          userId: demoUser.id,
+          ...record,
+        },
+      });
+    }
+  }
+
+  const existingScore = await prisma.creditScore.count({ where: { userId: demoUser.id } });
+  let creditScore: { id: string };
+  if (existingScore === 0) {
+    creditScore = await prisma.creditScore.create({
       data: {
         userId: demoUser.id,
-        ...record,
+        score: 642,
+        riskLevel: RiskLevel.ACCEPTABLE,
+        maxCreditAmount: '150.00',
+        scoreHash: 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
+        breakdown: {
+          constantSales: 22,
+          paymentHistory: 30,
+          commercialReputation: 15,
+          businessAge: 8,
+          verifiedDocs: 6,
+          usageBehavior: 10,
+        },
+      },
+    });
+  } else {
+    creditScore = (await prisma.creditScore.findFirstOrThrow({ where: { userId: demoUser.id } }));
+  }
+
+  const existingRequests = await prisma.loanRequest.count({ where: { userId: demoUser.id } });
+  let loanRequest: { id: string };
+  if (existingRequests === 0) {
+    loanRequest = await prisma.loanRequest.create({
+      data: {
+        userId: demoUser.id,
+        requestedAmount: '100.00',
+        termDays: 30,
+        purpose: 'Ampliar inventario de frutas',
+        status: 'APPROVED',
+        scoreId: creditScore.id,
+      },
+    });
+  } else {
+    loanRequest = (await prisma.loanRequest.findFirstOrThrow({ where: { userId: demoUser.id } }));
+  }
+
+  const existingLoan = await prisma.loan.count({ where: { loanRequestId: loanRequest.id } });
+  if (existingLoan === 0) {
+    await prisma.loan.create({
+      data: {
+        userId: demoUser.id,
+        loanRequestId: loanRequest.id,
+        principalAmount: '100.00',
+        interestAmount: '5.00',
+        totalAmount: '105.00',
+        status: 'ACTIVE',
       },
     });
   }
-
-  const creditScore = await prisma.creditScore.create({
-    data: {
-      userId: demoUser.id,
-      score: 642,
-      riskLevel: RiskLevel.ACCEPTABLE,
-      maxCreditAmount: '150.00',
-      scoreHash: 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456',
-      breakdown: {
-        constantSales: 22,
-        paymentHistory: 30,
-        commercialReputation: 15,
-        businessAge: 8,
-        verifiedDocs: 6,
-        usageBehavior: 10,
-      },
-    },
-  });
-
-  const loanRequest = await prisma.loanRequest.create({
-    data: {
-      userId: demoUser.id,
-      requestedAmount: '100.00',
-      termDays: 30,
-      purpose: 'Ampliar inventario de frutas',
-      status: 'APPROVED',
-      scoreId: creditScore.id,
-    },
-  });
-
-  await prisma.loan.create({
-    data: {
-      userId: demoUser.id,
-      loanRequestId: loanRequest.id,
-      principalAmount: '100.00',
-      interestAmount: '5.00',
-      totalAmount: '105.00',
-      status: 'ACTIVE',
-    },
-  });
 
   console.log('✅ Seed completed');
   console.log('   Admin user: admin@credia.io (password: demo1234)');
