@@ -13,6 +13,7 @@ import { Select } from '@/components/ui/select';
 import { ErrorState } from '@/components/ui/error-state';
 import { SkeletonCard } from '@/components/ui/skeleton';
 import { WalletButton } from '@/components/wallet/wallet-button';
+import { WalletBalanceCard } from '@/components/wallet/wallet-balance';
 import { usersApi, type UpdateUserPayload } from '@/lib/api/users';
 import { businessProfileApi, type BusinessProfile, type CreateBusinessProfilePayload } from '@/lib/api/business-profile';
 import { formatUsdc, formatDate } from '@/lib/format';
@@ -131,7 +132,7 @@ export default function MiPerfilPage() {
               <CardTitle>Wallet Solana</CardTitle>
               <CardDescription>Para registrar tu reputación on-chain y recibir USDC</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <Wallet className="h-4 w-4 text-slate-500" />
                 <WalletButton />
@@ -143,6 +144,7 @@ export default function MiPerfilPage() {
                   <span className="text-xs text-slate-500">No vinculada</span>
                 )}
               </div>
+              {meQuery.data.walletAddress ? <WalletBalanceCard source="me" /> : null}
             </CardContent>
           </Card>
         </div>

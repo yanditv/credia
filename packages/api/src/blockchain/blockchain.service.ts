@@ -48,6 +48,12 @@ export interface DisburseUsdcInput {
   amount: string;
 }
 
+export interface WalletBalance {
+  address: string;
+  sol: { lamports: string; ui: string };
+  usdc: { raw: string; ui: string; decimals: number };
+}
+
 export class UsdcDisbursementError extends Error {
   constructor(
     message: string,
@@ -171,6 +177,64 @@ export class BlockchainService {
         error,
       );
     }
+  }
+
+  // Read-only: balance de SOL + USDC para cualquier wallet (USER o admin treasury).
+  // Usa JSON-RPC directo via fetch para no depender de la API de queries de
+  // @solana/kit (que cambió de shape entre versiones — ver fix #63).
+  async getWalletBalance(walletAddress: string): Promise<WalletBalance> {
+    const usdcMint = this.getUsdcMintAddress();
+    const usdcDecimals = this.getUsdcDecimals();
+
+    const [solRes, usdcAccounts] = await Promise.all([
+      this.rpcCall<{ value: number }>('getBalance', [walletAddress]),
+      this.rpcCall<{
+        value: { account: { data: { parsed: { info: { tokenAmount: { amount: string } } } } } }[];
+      }>('getTokenAccountsByOwner', [
+        walletAddress,
+        { mint: usdcMint },
+        { encoding: 'jsonParsed' },
+      ]),
+    ]);
+
+    const lamports = BigInt(solRes.value);
+    const solUi = (Number(lamports) / 1e9).toFixed(4);
+
+    let usdcRaw = 0n;
+    for (const account of usdcAccounts.value) {
+      usdcRaw += BigInt(account.account.data.parsed.info.tokenAmount.amount);
+    }
+    const usdcUi = (Number(usdcRaw) / 10 ** usdcDecimals).toFixed(2);
+
+    return {
+      address: walletAddress,
+      sol: { lamports: lamports.toString(), ui: solUi },
+      usdc: { raw: usdcRaw.toString(), ui: usdcUi, decimals: usdcDecimals },
+    };
+  }
+
+  async getAdminAddress(): Promise<string> {
+    const signer = await this.getAdminSigner();
+    return signer.address;
+  }
+
+  private async rpcCall<T>(method: string, params: unknown[]): Promise<T> {
+    const res = await fetch(this.getRpcUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    });
+    if (!res.ok) {
+      throw new Error(`RPC ${method} returned HTTP ${res.status}`);
+    }
+    const data = (await res.json()) as { result?: T; error?: { message: string } };
+    if (data.error) {
+      throw new Error(`RPC ${method} error: ${data.error.message}`);
+    }
+    if (data.result === undefined) {
+      throw new Error(`RPC ${method} returned no result`);
+    }
+    return data.result;
   }
 
   private async getAdminClient() {

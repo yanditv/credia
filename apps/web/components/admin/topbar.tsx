@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { useUiStore } from '@/lib/ui-store';
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/wallet/wallet-button';
+import { WalletBalanceCard } from '@/components/wallet/wallet-balance';
 
 export function Topbar() {
   const router = useRouter();
@@ -33,9 +34,14 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Solo USER necesita wallet (para recibir USDC + reputación on-chain).
-            ADMIN/RISK_ANALYST gestionan a través del backend con ADMIN_KEYPAIR. */}
-        {user?.role === 'USER' ? <WalletButton /> : null}
+        {/* USER ve botón de su wallet personal. ADMIN/RISK_ANALYST ven el saldo
+            del treasury (ADMIN_KEYPAIR) — útil para detectar si se queda sin USDC
+            antes de un disbursement (ver feature flag de PR #48). */}
+        {user?.role === 'USER' ? (
+          <WalletButton />
+        ) : user?.role ? (
+          <WalletBalanceCard source="treasury" variant="compact" label="Treasury" />
+        ) : null}
 
         <div className="hidden items-center gap-2 rounded-lg bg-slate-800/60 px-3 py-1.5 text-sm sm:flex">
           <UserIcon className="h-4 w-4 text-slate-400" />

@@ -15,6 +15,7 @@ import { DashboardMetricsModule } from './dashboard-metrics/dashboard-metrics.mo
 import { BlockchainModule } from './blockchain/blockchain.module';
 import { AuditModule } from './audit/audit.module';
 import { UploadModule } from './upload/upload.module';
+import { TreasuryModule } from './treasury/treasury.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { UploadModule } from './upload/upload.module';
     BlockchainModule,
     AuditModule,
     UploadModule,
+    TreasuryModule,
   ],
   providers: [
     {

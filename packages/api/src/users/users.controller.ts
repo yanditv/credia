@@ -1,17 +1,21 @@
-import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser, CurrentUserPayload } from '../auth/current-user.decorator';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ConnectWalletDto } from './dto/connect-wallet.dto';
+import { BlockchainService } from '../blockchain/blockchain.service';
 
 @ApiTags('users')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly blockchainService: BlockchainService,
+  ) {}
 
   @Get('me')
   @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
@@ -35,5 +39,17 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Wallet inválida' })
   connectWallet(@CurrentUser() user: CurrentUserPayload, @Body() dto: ConnectWalletDto) {
     return this.usersService.connectWallet(user.id, dto);
+  }
+
+  @Get('me/wallet/balance')
+  @ApiOperation({ summary: 'Saldo SOL + USDC de la wallet vinculada en Solana' })
+  @ApiResponse({ status: 200, description: 'Saldo on-chain' })
+  @ApiResponse({ status: 400, description: 'Usuario sin wallet vinculada' })
+  async getWalletBalance(@CurrentUser() user: CurrentUserPayload) {
+    const me = await this.usersService.findById(user.id);
+    if (!me.walletAddress) {
+      throw new BadRequestException('No tenés una wallet vinculada todavía');
+    }
+    return this.blockchainService.getWalletBalance(me.walletAddress);
   }
 }
