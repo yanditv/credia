@@ -4,6 +4,7 @@ import type { UserMe } from '../api-types';
 export interface UpdateUserPayload {
   fullName?: string;
   phone?: string;
+  email?: string;
 }
 
 export const usersApi = {
