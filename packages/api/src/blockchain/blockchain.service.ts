@@ -70,20 +70,14 @@ export class BlockchainService {
     const targetWallet = address(input.targetWallet);
     const [userReputation] = await findUserReputationPda(targetWallet);
 
-    const signature = await client.sendTransaction([
+    const plan = await client.sendTransaction([
       getUpdateScoreHashInstruction(
-        {
-          targetWallet,
-          userReputation,
-          admin: CREDIA_REPUTATION_ADMIN_ADDRESS,
-        },
-        {
-          scoreHash: this.hexToBytes32(input.scoreHashHex),
-          status: input.status,
-        },
+        { targetWallet, userReputation, admin: CREDIA_REPUTATION_ADMIN_ADDRESS },
+        { scoreHash: this.hexToBytes32(input.scoreHashHex), status: input.status },
       ),
     ]);
 
+    const signature = await this.sendAndGetSignature(plan);
     return { signature, userReputation };
   }
 
@@ -93,20 +87,14 @@ export class BlockchainService {
     const loanIdHash = this.hexToBytes32(input.loanIdHashHex);
     const [loanRecord] = await findLoanRecordPda(targetWallet, loanIdHash);
 
-    const signature = await client.sendTransaction([
+    const plan = await client.sendTransaction([
       getCreateLoanRecordInstruction(
-        {
-          targetWallet,
-          loanRecord,
-          admin: CREDIA_REPUTATION_ADMIN_ADDRESS,
-        },
-        {
-          loanIdHash,
-          amountHash: this.hexToBytes32(input.amountHashHex),
-        },
+        { targetWallet, loanRecord, admin: CREDIA_REPUTATION_ADMIN_ADDRESS },
+        { loanIdHash, amountHash: this.hexToBytes32(input.amountHashHex) },
       ),
     ]);
 
+    const signature = await this.sendAndGetSignature(plan);
     return { signature, loanRecord };
   }
 
@@ -119,58 +107,40 @@ export class BlockchainService {
     const paymentHash = this.hexToBytes32(input.paymentHashHex);
     const [paymentRecord] = await findPaymentRecordPda(loanRecord, paymentHash);
 
-    const signature = await client.sendTransaction([
+    const plan = await client.sendTransaction([
       getRegisterPaymentInstruction(
-        {
-          paymentRecord,
-          loanRecord,
-          authority: payerSigner.address,
-        },
-        {
-          paymentHash,
-          amountHash: this.hexToBytes32(input.amountHashHex),
-        },
+        { paymentRecord, loanRecord, authority: payerSigner.address },
+        { paymentHash, amountHash: this.hexToBytes32(input.amountHashHex) },
       ),
     ]);
 
+    const signature = await this.sendAndGetSignature(plan);
     return { signature, paymentRecord };
   }
 
   async closeLoan(input: AdminLoanActionInput) {
     const client = await this.getAdminClient();
     const targetWallet = address(input.targetWallet);
-    const [loanRecord] = await findLoanRecordPda(
-      targetWallet,
-      this.hexToBytes32(input.loanIdHashHex),
-    );
+    const [loanRecord] = await findLoanRecordPda(targetWallet, this.hexToBytes32(input.loanIdHashHex));
 
-    const signature = await client.sendTransaction([
-      getCloseLoanInstruction({
-        targetWallet,
-        loanRecord,
-        admin: CREDIA_REPUTATION_ADMIN_ADDRESS,
-      }),
+    const plan = await client.sendTransaction([
+      getCloseLoanInstruction({ targetWallet, loanRecord, admin: CREDIA_REPUTATION_ADMIN_ADDRESS }),
     ]);
 
+    const signature = await this.sendAndGetSignature(plan);
     return { signature, loanRecord };
   }
 
   async markDefault(input: AdminLoanActionInput) {
     const client = await this.getAdminClient();
     const targetWallet = address(input.targetWallet);
-    const [loanRecord] = await findLoanRecordPda(
-      targetWallet,
-      this.hexToBytes32(input.loanIdHashHex),
-    );
+    const [loanRecord] = await findLoanRecordPda(targetWallet, this.hexToBytes32(input.loanIdHashHex));
 
-    const signature = await client.sendTransaction([
-      getMarkDefaultInstruction({
-        targetWallet,
-        loanRecord,
-        admin: CREDIA_REPUTATION_ADMIN_ADDRESS,
-      }),
+    const plan = await client.sendTransaction([
+      getMarkDefaultInstruction({ targetWallet, loanRecord, admin: CREDIA_REPUTATION_ADMIN_ADDRESS }),
     ]);
 
+    const signature = await this.sendAndGetSignature(plan);
     return { signature, loanRecord };
   }
 
@@ -280,6 +250,15 @@ export class BlockchainService {
     }
 
     return this.extractSignatureFromError(candidate.cause);
+  }
+
+  private async sendAndGetSignature(plan: unknown): Promise<string> {
+    if (typeof plan === 'object' && plan !== null && typeof (plan as Record<string,unknown>).send === 'function') {
+      const result = await (plan as { send: () => Promise<unknown> }).send();
+      const r = result as Record<string,unknown>;
+      return typeof result === 'string' ? result : (String(r.value ?? r.signature ?? ''));
+    }
+    return typeof plan === 'string' ? plan : '';
   }
 
   private hexToBytes32(value: string) {
