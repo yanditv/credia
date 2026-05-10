@@ -46,7 +46,6 @@ export function OnboardingWizard() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const logout = useAuthStore((s) => s.logout);
   const walletAddress = useWalletStore((s) => s.walletAddress);
 
   const [step, setStep] = useState<Step>(1);
@@ -256,25 +255,26 @@ export function OnboardingWizard() {
               </div>
               <CardTitle>¡Bienvenido a Credia!</CardTitle>
               <CardDescription>
-                Tu cuenta y perfil de negocio están listos. Pronto vas a poder registrar tus
-                ventas diarias y ver tu score para desbloquear crédito.
+                Tu cuenta y perfil de negocio están listos. Empezá registrando tus
+                ventas diarias para construir tu score.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-slate-400">
-                Las rutas para registrar ventas y ver tu perfil se habilitan en el próximo
-                release. Tus datos ya quedaron guardados.
-              </p>
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={() => router.push('/mis-ventas')}
+              >
+                <Check className="mr-2 h-4 w-4" />
+                Registrar mi primera venta
+              </Button>
               <Button
                 variant="ghost"
                 className="w-full"
                 size="lg"
-                onClick={() => {
-                  logout();
-                  router.replace('/login');
-                }}
+                onClick={() => router.push('/mi-perfil')}
               >
-                Cerrar sesión
+                Ir a mi perfil
               </Button>
             </CardContent>
           </Card>
