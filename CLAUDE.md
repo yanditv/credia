@@ -1,7 +1,9 @@
-# CLAUDE.md — Credia Hackathon Guide
+# CLAUDE.md — Credia Project Guide
 
-> Guía maestra para desarrollo asistido por IA (vibe coding) en hackathon de 3 días.
+> Guía maestra para desarrollo asistido por IA (vibe coding).
 > Este archivo le dice a Claude exactamente qué es el proyecto, cómo está estructurado y cómo debe ayudarte.
+>
+> **Antes de generar código, leer también [CONTRIBUTING.md](CONTRIBUTING.md)** — contiene el modelo de ramas, convenciones de commits/PR, y reglas obligatorias para asistentes de IA.
 
 ---
 
@@ -438,6 +440,188 @@ Cuando trabajes en este proyecto, sigue estas reglas:
 8. **Guards en rutas protegidas.** `@UseGuards(JwtAuthGuard, RolesGuard)`.
 9. **Validación con class-validator.** DTOs con decoradores de validación.
 10. **Commits atómicos.** Un feature a la vez.
+
+---
+
+## 🚧 Restricciones de Ownership y Lanes (Día 3)
+
+> **Regla obligatoria para devs y para asistentes de IA (Claude / Cursor / Copilot):**
+> trabajar SOLO en archivos del lane asignado a la rama actual. Cross-lane changes requieren commit separado con prefix `fix(<otra-area>):` y nota explícita en el PR description.
+
+### Matriz de ownership al 2026-05-09 (Día 3)
+
+| Lane | Owner | GitHub | Áreas (paths owneados) |
+|---|---|---|---|
+| 🎨 Frontend | **Junior Wachapa** | `yanditv` | `apps/web/**` (todas las páginas, componentes, lib, proxy) |
+| ⚙️ Backend api | **Cesar Puma** | `pumamz` | `packages/api/src/**` excepto `auth/**` y `blockchain/**` |
+| 🔐 Auth | **Cesar Puma** | `pumamz` | `packages/api/src/auth/**` |
+| ⛓️ Blockchain | **Daniel Gualán** | `Famiitry` | `packages/blockchain/**`, `packages/api/src/blockchain/**` (cuando exista) |
+| 🚀 Infra / Deploy / Demo | **Sebastián Jara** *(lead)* | `SebastianJara21` | `Dockerfile*`, `infra/**`, `docker-compose.prod.yml`, deploy scripts, video demo |
+| 📚 Docs | Cualquiera | — | `*.md` en el área respectiva, scope `docs(<area>):` |
+
+### Branches activas Día 3 → owner asignado
+
+```
+Junior (yanditv) — apps/web:
+  feat/web/admin-dashboard       (heredada de Sebastián Día 1, fast-forwarded a develop tip)
+  feat/web/score-ui              (heredada de Sebastián Día 1, fast-forwarded a develop tip)
+  feat/web/wallet-connect        (Día 3)
+  feat/web/blockchain-ui         (Día 3)
+  feat/web/reports-page          (Día 3)
+  feat/web/audit-page            (Día 3)
+  feat/web/ux-polish             (Día 3)
+
+Cesar (pumamz) — packages/api:
+  feat/api/blockchain-hooks      (hooks approve/payment → on-chain)
+  feat/api/dashboard-metrics     (GET /admin/dashboard/metrics)
+  feat/api/audit-module          (modelo + interceptor + endpoint)
+
+Daniel (Famiitry) — packages/blockchain + bridge:
+  feat/blockchain/codama-client  (TS client autogenerado desde IDL)
+  feat/api/blockchain-service    (NestJS module con @solana/kit)
+  feat/blockchain/error-codes    (#[error_code] enum tipado)
+  feat/blockchain/state-machine  (require! constraints)
+  feat/blockchain/payment-uniqueness (payment_hash en seeds)
+  feat/blockchain/anchor-tests   (LiteSVM o devnet tests)
+
+Sebastián (SebastianJara21) — infra / lead:
+  feat/infra/dockerfiles         (multi-stage NestJS + Next.js)
+  feat/infra/deploy-prod         (Fly.io / VPS + SSL Cloudflare)
+  chore/docs/demo-video          (script + grabación)
+```
+
+### Reglas para asistentes de IA
+
+Cuando ayudes a un dev de Credia:
+
+1. **Identificá el dev por la rama actual.** Mirá `git branch --show-current` antes de generar código:
+   - `feat/web/*` → estás ayudando a Junior. Tocar SOLO `apps/web/`.
+   - `feat/api/blockchain-*` o `feat/blockchain/*` → Daniel. Tocar SOLO `packages/blockchain/` y `packages/api/src/blockchain/`.
+   - `feat/api/*` (resto) → Cesar. Tocar `packages/api/src/` excluyendo blockchain.
+   - `feat/infra/*` → Sebastián.
+2. **NO modifiques archivos fuera del lane** sin advertir explícitamente: *"este cambio toca lane de X (`<archivo>`); ¿confirmás cross-lane fix?"*
+3. **Si el lane requiere un endpoint API que no existe**, NO inventes el endpoint en otra rama. Usar **stub-and-swap**: mock con la firma esperada en el lib del cliente (`apps/web/lib/api/<x>.ts`), marcar `// TODO: swap when feat/api/<x> mergee`.
+4. **Antes de generar código**, leer en orden:
+   - `CONTRIBUTING.md` (rules de ramas/commits/PRs)
+   - Esta sección (Ownership y Lanes)
+   - Sección "Recursos Disponibles" (abajo)
+   - Skill relevante en `.agents/skills/` si aplica
+5. **NO crees ramas nuevas sin verificar primero** que no existe una asignada en la matriz arriba.
+6. **Cross-lane fix permitido (excepción) — protocolo:**
+   - Hacer el fix en commit separado con prefix `fix(<otra-area>):` y body que explique por qué.
+   - Mencionar en PR description: *"Cross-lane fix to `<archivo>`; cherry-pickable a su rama si el owner prefiere"*.
+   - Casos precedentes en este repo: `fix(api): habilita CORS` (en frontend PR #8), `fix(auth): exporta RolesGuard` (en api PR #9).
+
+---
+
+## 📚 Recursos Disponibles
+
+### Skills de IA versionados (`.agents/skills/`)
+
+| Skill | Cuándo usar | Refs principales |
+|---|---|---|
+| `solana-dev` (Solana Foundation, MIT) | **Cualquier integración Solana** — Anchor, `@solana/kit`, Codama, Wallet Standard, Phantom/Solflare | ver tabla abajo |
+
+**Refs específicas para Día 3:**
+
+| Archivo | Para qué |
+|---|---|
+| `references/programs/anchor.md` | Patrones canónicos de programas Anchor (error_code, require!, IDL) |
+| `references/kit/overview.md` | `@solana/kit` (modern client) — usar este, NO legacy `@solana/web3.js` |
+| `references/kit/codama.md` | Generar TS clients tipados desde IDL del programa |
+| `references/kit/react.md` | `@solana/react-hooks` para wallet connection (ConnectorKit, Wallet Standard) |
+| `references/idl-codegen.md` | Flujo de codegen del IDL |
+| `references/kit/programs/token.md` | SPL Token / USDC handling |
+| `references/security.md` | Checklist de seguridad on-chain |
+
+**Regla:** los devs de Credia DEBEN consumir el skill `solana-dev` cuando trabajen en blockchain. La IA debe leer las refs relevantes antes de generar código Solana.
+
+### Backend ya implementado (NestJS) al cierre Día 2
+
+```
+✅ /auth/{register, login, refresh}
+✅ /users/me, /users/me/wallet
+✅ /business-profile (CRUD)
+✅ /income-records (CRUD + /summary)
+✅ /scores/{calculate, me, me/latest}, /admin/scores/:userId
+✅ /loan-requests (user) + /admin/loan-requests + approve/reject
+✅ /loans (user + admin) + /loans/:id/payments
+✅ /admin/payments + /payments/me
+```
+
+**Antes de implementar un endpoint nuevo**, verificá si ya existe. La columna `apps/web/lib/api/*.ts` tiene el cliente tipado.
+
+### Componentes UI ya creados (`apps/web/components/`)
+
+```
+ui/
+├── button.tsx           Variants: primary | secondary | ghost | danger; sizes: sm | md | lg
+├── input.tsx
+├── label.tsx
+├── card.tsx             + CardHeader/Title/Description/Content/Footer
+├── badge.tsx            Tones: neutral | amber | green | red | blue | slate
+└── select.tsx
+
+admin/
+├── sidebar.tsx
+├── topbar.tsx
+├── nav-items.ts         8 items: Dashboard, Usuarios, Solicitudes, Créditos, Pagos, Mora, Reportes, Auditoría
+└── coming-soon.tsx      Placeholder reusable (props: title, subtitle, blockReference, bullets[])
+
+loans/
+├── loan-request-form.tsx
+├── loan-requests-table.tsx     (con showUserColumn + showAdminActions props)
+├── loans-table.tsx
+├── payments-table.tsx
+└── status-badge.tsx
+```
+
+**Reusar > duplicar.** Antes de crear un componente nuevo, verificá si existe en `components/ui/` o `components/loans/`.
+
+### Lib ya creada (`apps/web/lib/`)
+
+```
+api.ts                        Cliente fetch tipado, ApiError class, auto Bearer token, logout en 401
+auth-store.ts                 Zustand persist con cookie sync (credia_auth_token) + _hasHydrated flag
+api-types.ts                  Tipos del API (mantener sync con prisma/schema.prisma)
+api/
+├── loan-requests.ts          listMine, create, listAllAdmin, approve, reject
+├── loans.ts                  listMine, getById, listAllAdmin
+└── payments.ts               listMine, listAllAdmin, listForLoan
+format.ts                     formatUsdc(), formatDate() en es-EC
+utils.ts                      cn() helper (clsx + tailwind-merge)
+```
+
+**Para nuevas API calls, agregar funciones en `lib/api/<recurso>.ts` siguiendo el patrón existente.** No fetch crudo en componentes.
+
+### Frontend deps instaladas (`apps/web/package.json`)
+
+```
+next 16.2.6, react 19.2.4 (con React Compiler estable),
+tailwindcss v4 (config en globals.css),
+zustand 5 (persist), lucide-react,
+@tanstack/react-query 5 (server state),
+sonner (toasts), clsx + tailwind-merge
+```
+
+### Programa Anchor desplegado en Devnet
+
+- **Program ID:** `DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o`
+- **Explorer:** https://explorer.solana.com/address/DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o?cluster=devnet
+- **Admin authority pubkey:** `HwCUQk4QKvDweRpmDZdEc4tLVDnUm6ZkBHQ2ZXxWmN7C`
+- **Deploy signature:** `Xzw34GMsjAY2p7feDfMvz7yPksuw2dH5aYACBrGxisAVZu6t8tCo1UGCjSqrTWP3y7Fv8GZubQk98pSfbHhB3mt`
+- **6 instrucciones implementadas:** `init_reputation`, `update_score_hash`, `create_loan_record`, `register_payment`, `close_loan`, `mark_default`
+- **3 cuentas (PDA):** `UserReputation`, `LoanRecord`, `PaymentRecord` (con `bump` guardado para re-derivar)
+- **Auth model:** instrucciones admin requieren `constraint = admin.key() == ADMIN_PUBKEY`
+
+### Datos seedeados disponibles (después de `npx prisma db seed`)
+
+| User | Password | Role | Datos |
+|---|---|---|---|
+| `admin@credia.io` | `demo1234` | ADMIN | Administrador genérico |
+| `demo@credia.io` | `demo1234` | USER | María García, vendedora Quito, BusinessProfile + 7 IncomeRecords + CreditScore 642 (cupo $150) + Loan activo $100 |
+
+**Usá estos datos en demos visuales.** No inventes usuarios distintos sin actualizar el seed.
 
 ---
 

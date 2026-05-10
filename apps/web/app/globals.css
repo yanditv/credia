@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* Design tokens — alineados con DESIGN.md */
+@theme {
+  --color-credia-green: #22c55e;
+  --color-credia-green-dark: #16a34a;
+  --color-credia-surface: #1e293b;
+  --color-credia-surface-base: #0f172a;
+
+  --font-display: var(--font-display), system-ui, sans-serif;
+  --font-body: var(--font-body), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+html {
+  font-family: var(--font-body);
+}
+
+code, .font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Scrollbar discreto en panel admin */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}

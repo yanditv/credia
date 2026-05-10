@@ -96,7 +96,7 @@ Admin panel: `http://localhost:3000`
 ### 5. Blockchain (Solana)
 
 ```bash
-cd packages/blockchain/credia_reputation
+cd packages/blockchain
 
 # Configurar devnet
 solana config set --url devnet
@@ -104,11 +104,17 @@ solana airdrop 2
 
 # Build y deploy
 anchor build
-anchor deploy
+anchor deploy --provider.cluster devnet
 
 # Copiar Program ID a .env
-echo "SOLANA_PROGRAM_ID=<program-id>" >> ../../.env
+echo "SOLANA_PROGRAM_ID=DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o" >> .env
 ```
+
+Program ID desplegado en devnet:
+`DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o`
+
+Solana Explorer:
+`https://explorer.solana.com/address/DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o?cluster=devnet`
 
 ---
 
@@ -151,7 +157,7 @@ credia/
 2. **Usuario demo** → María García, vendedora de mercado, Quito
 3. **Score calculado** → 642/1000, Riesgo Aceptable, cupo $150 USDC
 4. **Solicitud aprobada** → $100 USDC a 30 días
-5. **Hash on-chain** → [Ver en Solana Explorer →](https://explorer.solana.com/?cluster=devnet)
+5. **Hash on-chain** → [Ver en Solana Explorer →](https://explorer.solana.com/address/DUS67qe9NMfLuYr99X21a7NQ12sRHZCpTCDpyGzs4T5o?cluster=devnet)
 6. **Pago registrado** → reputación mejora on-chain
 
 ---
