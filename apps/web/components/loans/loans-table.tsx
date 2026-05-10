@@ -2,6 +2,7 @@
 
 import { LoanStatusBadge } from './status-badge';
 import { TransactionLink } from '@/components/blockchain/transaction-link';
+import { AddressLink } from '@/components/blockchain/address-link';
 import type { Loan, LoanWithUser } from '@/lib/api-types';
 import { formatDate, formatUsdc } from '@/lib/format';
 
@@ -9,6 +10,10 @@ type Row = Loan | LoanWithUser;
 
 function isWithUser(row: Row): row is LoanWithUser {
   return 'user' in row && (row as LoanWithUser).user !== undefined;
+}
+
+function isValidTx(sig: string | null | undefined): sig is string {
+  return typeof sig === 'string' && sig.length > 10 && sig !== '[object Object]';
 }
 
 export function LoansTable({ rows, showUserColumn }: { rows: Row[]; showUserColumn: boolean }) {
@@ -62,8 +67,10 @@ export function LoansTable({ rows, showUserColumn }: { rows: Row[]; showUserColu
                 <LoanStatusBadge status={row.status} />
               </td>
               <td className="px-4 py-3 text-xs">
-                {row.blockchainTx ? (
+                {isValidTx(row.blockchainTx) ? (
                   <TransactionLink signature={row.blockchainTx} />
+                ) : (row as any).blockchainLoanRecord ? (
+                  <AddressLink address={(row as any).blockchainLoanRecord} />
                 ) : (
                   <span className="text-slate-600">—</span>
                 )}
