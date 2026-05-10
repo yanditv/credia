@@ -14,7 +14,7 @@ RUN npx prisma generate --schema packages/api/prisma/schema.prisma
 
 COPY packages/api packages/api
 COPY packages/blockchain packages/blockchain
-RUN npm run build -w @credia/api
+RUN npm run build -w @credia/blockchain && npm run build -w @credia/api
 
 FROM node:22-alpine AS runner
 WORKDIR /app
@@ -22,5 +22,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/api/dist packages/api/dist
 COPY --from=builder /app/packages/api/package.json packages/api/package.json
 COPY --from=builder /app/packages/api/prisma packages/api/prisma
+COPY --from=builder /app/packages/blockchain/package.json packages/blockchain/package.json
+COPY --from=builder /app/packages/blockchain/dist packages/blockchain/dist
 EXPOSE 3001
 CMD ["node", "packages/api/dist/main.js"]
