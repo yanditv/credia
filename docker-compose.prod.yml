@@ -1,0 +1,118 @@
+# Stack productivo para Coolify (single-VPS).
+# Coolify hace polling del repo y rebuilda este stack ante pushes a develop/main.
+#
+# Servicios:
+# - api      → NestJS 11 (build desde packages/api/Dockerfile)
+# - postgres → 16-alpine, datos persistidos
+# - redis    → 7-alpine, append-only
+# - minio    → storage de comprobantes (bucket público creado en boot por UploadService)
+#
+# Variables sensibles vienen del archivo .env que Coolify inyecta en runtime.
+# Ver .env.production.example para la lista completa.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    restart: unless-stopped
+    # Aplica migraciones pendientes y arranca la API. Las migraciones son
+    # idempotentes (prisma migrate deploy), así que correrlas en cada boot
+    # es seguro y mantiene el schema sincronizado tras cada deploy.
+    command:
+      - sh
+      - -c
+      - 'npx prisma migrate deploy --schema packages/api/prisma/schema.prisma && node packages/api/dist/main.js'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-7d}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-30d}
+      SOLANA_NETWORK: ${SOLANA_NETWORK:-devnet}
+      SOLANA_RPC_URL: ${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      SOLANA_PROGRAM_ID: ${SOLANA_PROGRAM_ID}
+      ADMIN_KEYPAIR: ${ADMIN_KEYPAIR}
+      USDC_DISBURSEMENT_ENABLED: ${USDC_DISBURSEMENT_ENABLED:-false}
+      SOLANA_USDC_MINT: ${SOLANA_USDC_MINT}
+      SOLANA_USDC_DECIMALS: ${SOLANA_USDC_DECIMALS:-6}
+      # Endpoint INTERNO — la API habla con MinIO por la red docker.
+      STORAGE_ENDPOINT: http://minio:9000
+      # URL PÚBLICA — la que se devuelve al navegador del usuario al subir un
+      # archivo. Coolify la sirve via Traefik (subdominio storage.credia.io)
+      # con SSL Let's Encrypt apuntando al puerto 9000 del servicio minio.
+      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL}
+      STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-credia-docs}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+    ports:
+      - '${API_PORT:-3001}:3001'
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:3001/docs']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-credia_db}
+      POSTGRES_USER: ${POSTGRES_USER:-credia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-credia} -d ${POSTGRES_DB:-credia_db}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    # Sin `ports:` para no publicar al host. MinIO se accede:
+    # - desde la API por la red docker interna (`http://minio:9000`)
+    # - desde el navegador por el subdominio storage.credia.io que Coolify
+    #   expone via ingress al puerto 9000 (ver infra/coolify/README.md).
+    # - la consola admin (9001) queda accesible solo via SSH tunnel.
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
