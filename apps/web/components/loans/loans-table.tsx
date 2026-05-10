@@ -69,8 +69,8 @@ export function LoansTable({ rows, showUserColumn }: { rows: Row[]; showUserColu
               <td className="px-4 py-3 text-xs">
                 {isValidTx(row.blockchainTx) ? (
                   <TransactionLink signature={row.blockchainTx} />
-                ) : (row as any).blockchainLoanRecord ? (
-                  <AddressLink address={(row as any).blockchainLoanRecord} />
+                ) : row.blockchainLoanRecord ? (
+                  <AddressLink address={row.blockchainLoanRecord} />
                 ) : (
                   <span className="text-slate-600">—</span>
                 )}

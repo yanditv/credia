@@ -114,8 +114,8 @@ export interface AdminUserDetail {
     maxCreditAmount: string;
     scoreHash: string;
     breakdown: Record<string, number>;
-    blockchainTx: string | null;
-    createdAt: string;
+  blockchainTx: string | null;
+  createdAt: string;
   }[];
 }
 
@@ -147,6 +147,7 @@ export interface Loan {
   totalAmount: string;
   status: LoanStatus;
   blockchainTx: string | null;
+  blockchainLoanRecord: string | null;
   createdAt: string;
   loanRequest?: { termDays: number; purpose: string };
 }
