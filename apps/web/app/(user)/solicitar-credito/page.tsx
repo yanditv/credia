@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { FileCheck2 } from 'lucide-react';
+import { FileCheck2, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ErrorState } from '@/components/ui/error-state';
 import { SkeletonTable } from '@/components/ui/skeleton';
@@ -10,6 +11,7 @@ import { LoanRequestForm } from '@/components/loans/loan-request-form';
 import { LoanRequestsTable } from '@/components/loans/loan-requests-table';
 import { loanRequestsApi } from '@/lib/api/loan-requests';
 import { scoresApi } from '@/lib/api/scores';
+import { usersApi } from '@/lib/api/users';
 import { formatUsdc } from '@/lib/format';
 
 export default function SolicitarCreditoPage() {
@@ -23,8 +25,17 @@ export default function SolicitarCreditoPage() {
     queryFn: () => scoresApi.getLatest(),
   });
 
+  // Source of truth para walletAddress: el server (auth-store solo guarda
+  // {id, email, role} desde el JWT y no se hidrata con walletAddress en login).
+  const meQuery = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: () => usersApi.getMe(),
+  });
+
   const maxAmount = scoreQuery.data?.maxCreditAmount;
-  const canRequest = scoreQuery.data && scoreQuery.data.score >= 400;
+  const hasWallet = Boolean(meQuery.data?.walletAddress);
+  const canRequest =
+    scoreQuery.data && scoreQuery.data.score >= 400 && hasWallet;
 
   return (
     <div className="space-y-6">
@@ -66,14 +77,40 @@ export default function SolicitarCreditoPage() {
             <LoanRequestForm />
           </CardContent>
         </Card>
-      ) : !scoreQuery.isLoading ? (
+      ) : !scoreQuery.isLoading && !meQuery.isLoading ? (
         <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-slate-300">
-              {scoreQuery.data
-                ? 'Tu score aún no califica para crédito (mínimo 400). Seguí registrando ventas para mejorarlo.'
-                : 'Necesitás calcular tu score primero. Andá a "Mi score" y tocá "Calcular ahora".'}
-            </p>
+          <CardContent className="flex flex-col gap-3 p-6">
+            {scoreQuery.data && scoreQuery.data.score < 400 ? (
+              <p className="text-sm text-slate-300">
+                Tu score aún no califica para crédito (mínimo 400). Seguí registrando ventas para mejorarlo.
+              </p>
+            ) : !scoreQuery.data ? (
+              <p className="text-sm text-slate-300">
+                Necesitás calcular tu score primero. Andá a &quot;Mi score&quot; y tocá &quot;Calcular ahora&quot;.
+              </p>
+            ) : !hasWallet ? (
+              <>
+                <div className="flex items-start gap-3">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
+                    <Wallet className="h-4 w-4" />
+                  </span>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-slate-200">
+                      Vinculá una wallet Solana antes de solicitar crédito
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      El desembolso de USDC se hace on-chain a la dirección que vincules en tu perfil. Sin wallet, no tenemos a dónde mandarte los fondos.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/mi-perfil"
+                  className="inline-flex h-8 items-center justify-center gap-2 self-start rounded-lg bg-green-500 px-3 text-sm font-medium text-white transition-colors hover:bg-green-600"
+                >
+                  Ir a vincular wallet
+                </Link>
+              </>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
